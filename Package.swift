@@ -2,27 +2,29 @@
 import PackageDescription
 
 let package = Package(
-    name: "CapgoCapacitorPluginTemplate",
+    name: "CapgoCapacitorNativeLoader",
     platforms: [.iOS(.v15)],
     products: [
         .library(
-            name: "CapgoCapacitorPluginTemplate",
-            targets: ["PluginTemplatePlugin"])
+            name: "CapgoCapacitorNativeLoader",
+            targets: ["NativeLoaderPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0")
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0"),
+        .package(url: "https://github.com/airbnb/lottie-spm.git", from: "4.6.0")
     ],
     targets: [
         .target(
-            name: "PluginTemplatePlugin",
+            name: "NativeLoaderPlugin",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
-                .product(name: "Cordova", package: "capacitor-swift-pm")
+                .product(name: "Cordova", package: "capacitor-swift-pm"),
+                .product(name: "Lottie", package: "lottie-spm")
             ],
-            path: "ios/Sources/PluginTemplatePlugin"),
+            path: "ios/Sources/NativeLoaderPlugin"),
         .testTarget(
-            name: "PluginTemplatePluginTests",
-            dependencies: ["PluginTemplatePlugin"],
-            path: "ios/Tests/PluginTemplatePluginTests")
+            name: "NativeLoaderPluginTests",
+            dependencies: ["NativeLoaderPlugin"],
+            path: "ios/Tests/NativeLoaderPluginTests")
     ]
 )

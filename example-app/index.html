@@ -3,23 +3,76 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@capgo/capacitor-plugin-template Example</title>
+    <title>@capgo/capacitor-native-loader Example</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <main class="container">
-      <h1>@capgo/capacitor-plugin-template</h1>
-      <p class="lead">Quickly validate the template plugin wiring.</p>
+      <header>
+        <h1>Native Loader</h1>
+        <button id="get-version" type="button">Version</button>
+      </header>
 
-      <label for="echo-value">Echo value</label>
-      <input id="echo-value" type="text" value="Hello from example app" />
+      <section class="controls" aria-label="Loader controls">
+        <label>
+          Style
+          <select id="loader-style">
+            <option value="siri">Siri</option>
+            <option value="orbit">Orbit</option>
+            <option value="ring">Ring</option>
+            <option value="pulse">Pulse</option>
+            <option value="dots">Dots</option>
+            <option value="bars">Bars</option>
+            <option value="wave">Wave</option>
+            <option value="halo">Halo</option>
+            <option value="around">Around</option>
+          </select>
+        </label>
 
-      <div class="actions">
-        <button id="run-echo">Run echo</button>
-        <button id="get-version">Get plugin version</button>
-      </div>
+        <label>
+          Placement
+          <select id="loader-placement">
+            <option value="center">Center</option>
+            <option value="top">Top</option>
+            <option value="bottom">Bottom</option>
+            <option value="fullscreen">Fullscreen</option>
+            <option value="around">Around</option>
+          </select>
+        </label>
 
-      <pre id="plugin-output">Press a button to run an action.</pre>
+        <label>
+          Touches
+          <select id="interaction-mode">
+            <option value="passThrough">Pass through</option>
+            <option value="block">Block</option>
+            <option value="loaderOnly">Loader only</option>
+          </select>
+        </label>
+
+        <label>
+          Message
+          <input id="loader-message" type="text" value="Preparing update" />
+        </label>
+
+        <label class="checkbox">
+          <input id="resize-webview" type="checkbox" />
+          Resize WebView
+        </label>
+
+        <label>
+          Progress
+          <input id="loader-progress" type="range" min="0" max="100" value="36" />
+        </label>
+      </section>
+
+      <section class="actions" aria-label="Actions">
+        <button id="show-loader" type="button">Show</button>
+        <button id="update-loader" type="button">Update</button>
+        <button id="set-progress" type="button">Progress</button>
+        <button id="hide-loader" type="button">Hide</button>
+      </section>
+
+      <pre id="plugin-output">Idle</pre>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>
