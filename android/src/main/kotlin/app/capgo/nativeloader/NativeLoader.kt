@@ -9,7 +9,9 @@ import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.SweepGradient
@@ -794,10 +796,12 @@ class AroundLoaderView(context: Context, private val item: LoaderItem) : View(co
 
 class SiriV2AroundLoaderView(context: Context, private val item: LoaderItem) : View(context) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
+        style = Paint.Style.FILL
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
     }
+    private val edgePath = Path()
+    private val shaderMatrix = Matrix()
     private val startTime = System.currentTimeMillis()
     private val tick = object : Runnable {
         override fun run() {
@@ -825,38 +829,50 @@ class SiriV2AroundLoaderView(context: Context, private val item: LoaderItem) : V
     override fun onDraw(canvas: Canvas) {
         val time = animationTime()
         val thickness = max(item.thicknessPx(context), 4f)
-        val inset = max(thickness * 1.1f, 8f)
-        val rect = RectF(inset, inset, width - inset, height - inset)
-        val radius = min(width, height) * 0.07f
         val centerX = width / 2f
         val centerY = height / 2f
+        val radius = min(width, height) * 0.075f
+        val crispWidth = max(thickness * 1.15f, 8f)
+        val glowWidth = max(thickness * 3.6f, 28f)
+        val colors = item.colors + item.colors.first()
+        val gradient = SweepGradient(centerX, centerY, colors, null)
+        shaderMatrix.setRotate((time * 360).toFloat(), centerX, centerY)
+        gradient.setLocalMatrix(shaderMatrix)
 
+        buildEdgePath(glowWidth, radius + glowWidth * 0.35f, time, 0.0f)
         paint.shader = null
+        paint.color = withAlpha(Color.WHITE, 18)
+        paint.maskFilter = BlurMaskFilter(thickness * 2.1f, BlurMaskFilter.Blur.NORMAL)
+        canvas.drawPath(edgePath, paint)
+
+        paint.shader = gradient
+        paint.maskFilter = BlurMaskFilter(thickness * 2.6f, BlurMaskFilter.Blur.NORMAL)
+        canvas.drawPath(edgePath, paint)
+
+        buildEdgePath(crispWidth, radius, time, thickness * 0.22f)
         paint.maskFilter = null
-        paint.strokeWidth = thickness
-        paint.color = withAlpha(Color.WHITE, 20)
-        canvas.drawRoundRect(rect, radius, radius, paint)
+        paint.shader = gradient
+        canvas.drawPath(edgePath, paint)
+    }
 
-        paint.shader = SweepGradient(centerX, centerY, item.colors + item.colors.first(), null)
-        paint.strokeWidth = thickness * 2.2f
-        paint.maskFilter = BlurMaskFilter(thickness * 2.5f, BlurMaskFilter.Blur.NORMAL)
-        canvas.save()
-        canvas.rotate((time * 150).toFloat(), centerX, centerY)
-        canvas.drawRoundRect(rect, radius, radius, paint)
-        canvas.restore()
+    private fun buildEdgePath(edgeWidth: Float, radius: Float, time: Double, wobble: Float) {
+        val phase = (time * PI * 2).toFloat()
+        val topInset = wobble * (0.55f + 0.45f * sin(phase + 0.2f))
+        val rightInset = wobble * (0.55f + 0.45f * sin(phase + 1.6f))
+        val bottomInset = wobble * (0.55f + 0.45f * sin(phase + 3.0f))
+        val leftInset = wobble * (0.55f + 0.45f * sin(phase + 4.4f))
+        val outer = RectF(-edgeWidth * 0.3f, -edgeWidth * 0.3f, width + edgeWidth * 0.3f, height + edgeWidth * 0.3f)
+        val inner = RectF(
+            edgeWidth + leftInset,
+            edgeWidth + topInset,
+            width - edgeWidth - rightInset,
+            height - edgeWidth - bottomInset,
+        )
 
-        paint.maskFilter = null
-        paint.strokeWidth = thickness
-        canvas.save()
-        canvas.rotate((time * 150 + 28).toFloat(), centerX, centerY)
-        canvas.drawRoundRect(rect, radius, radius, paint)
-        canvas.restore()
-
-        paint.shader = null
-        paint.strokeWidth = max(2f, thickness * 0.42f)
-        paint.color = withAlpha(Color.WHITE, 72)
-        val highlight = RectF(rect.left + thickness, rect.top + thickness, rect.right - thickness, rect.bottom - thickness)
-        canvas.drawRoundRect(highlight, max(0f, radius - thickness), max(0f, radius - thickness), paint)
+        edgePath.reset()
+        edgePath.fillType = Path.FillType.EVEN_ODD
+        edgePath.addRoundRect(outer, radius + edgeWidth, radius + edgeWidth, Path.Direction.CW)
+        edgePath.addRoundRect(inner, max(0f, radius - edgeWidth), max(0f, radius - edgeWidth), Path.Direction.CW)
     }
 
     private fun animationTime(): Double {

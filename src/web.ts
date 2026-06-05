@@ -399,11 +399,7 @@ const css = `
 .native-loader-style-wrapper-siri-v2 {
   align-items: stretch;
   justify-content: stretch;
-  padding:
-    calc(max(env(safe-area-inset-top), 4px) + (var(--loader-thickness) * 0.5))
-    calc(max(env(safe-area-inset-right), 4px) + (var(--loader-thickness) * 0.5))
-    calc(max(env(safe-area-inset-bottom), 4px) + (var(--loader-thickness) * 0.5))
-    calc(max(env(safe-area-inset-left), 4px) + (var(--loader-thickness) * 0.5));
+  padding: 0;
 }
 
 .native-loader-bottom {
@@ -517,22 +513,29 @@ const css = `
   transform-origin: left center;
 }
 
+@property --native-loader-siri-v2-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
 .native-loader-style-siri-v2 {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  border-radius: clamp(28px, 7vmin, 54px);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  border-radius: 0;
+  overflow: hidden;
 }
 
 .native-loader-style-siri-v2::before,
 .native-loader-style-siri-v2::after {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
+  border-radius: clamp(34px, 7vmin, 68px);
   padding: var(--loader-thickness);
   background: conic-gradient(
-    from 0deg,
+    from var(--native-loader-siri-v2-angle),
     var(--loader-color-1),
     var(--loader-color-2),
     var(--loader-color-3),
@@ -547,13 +550,16 @@ const css = `
 }
 
 .native-loader-style-siri-v2::before {
-  padding: calc(var(--loader-thickness) * 2.2);
-  filter: blur(calc(var(--loader-thickness) * 1.6));
-  opacity: 0.92;
+  inset: calc(var(--loader-thickness) * -2.4);
+  padding: calc(var(--loader-thickness) * 4);
+  filter: blur(calc(var(--loader-thickness) * 2.2));
+  opacity: 0.94;
 }
 
 .native-loader-style-siri-v2::after {
-  transform: rotate(24deg);
+  inset: 0;
+  padding: max(8px, calc(var(--loader-thickness) * 1.15));
+  opacity: 0.88;
 }
 
 .native-loader-style-siri span {
@@ -712,6 +718,6 @@ const css = `
 }
 
 @keyframes native-loader-siri-v2 {
-  to { transform: rotate(360deg); }
+  to { --native-loader-siri-v2-angle: 360deg; }
 }
 `;

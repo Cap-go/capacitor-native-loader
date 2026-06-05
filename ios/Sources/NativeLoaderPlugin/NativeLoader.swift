@@ -637,41 +637,38 @@ struct SiriV2AroundLoaderView: View {
     var body: some View {
         TimelineView(.animation) { context in
             let time = animationTime(context.date, item: item, reduceMotion: reduceMotion)
-            let rotation = time * 150
-            let radius = max(28, item.thickness * 4)
-            let inset = max(8, item.thickness * 1.1)
+            let rotation = time * 360
+            let radius = max(28, item.thickness * 4.8)
+            let crispWidth = max(8, item.thickness * 1.15)
+            let glowWidth = max(28, item.thickness * 3.6)
+            let gradient = AngularGradient(
+                colors: item.colors,
+                center: .center,
+                startAngle: .degrees(rotation),
+                endAngle: .degrees(rotation + 360)
+            )
 
             ZStack {
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.08), lineWidth: item.thickness)
+                SiriV2EdgeBandShape(thickness: glowWidth, cornerRadius: radius + glowWidth * 0.35, phase: time * .pi * 2, wobble: 0)
+                    .fill(Color.white.opacity(0.06), style: FillStyle(eoFill: true))
+                    .blur(radius: item.thickness * 2)
 
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(
+                SiriV2EdgeBandShape(thickness: glowWidth, cornerRadius: radius + glowWidth * 0.35, phase: time * .pi * 2, wobble: 0)
+                    .fill(gradient, style: FillStyle(eoFill: true))
+                    .blur(radius: item.thickness * 2.4)
+                    .opacity(0.94)
+
+                SiriV2EdgeBandShape(thickness: crispWidth, cornerRadius: radius, phase: time * .pi * 2, wobble: item.thickness * 0.22)
+                    .fill(
                         AngularGradient(
                             colors: item.colors,
                             center: .center,
-                            startAngle: .degrees(rotation),
-                            endAngle: .degrees(rotation + 360)
+                            startAngle: .degrees(rotation + 18),
+                            endAngle: .degrees(rotation + 378)
                         ),
-                        style: StrokeStyle(lineWidth: item.thickness * 2.2, lineCap: .round, lineJoin: .round)
+                        style: FillStyle(eoFill: true)
                     )
-                    .blur(radius: item.thickness * 1.2)
-                    .opacity(0.92)
-
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(
-                        AngularGradient(
-                            colors: item.colors,
-                            center: .center,
-                            startAngle: .degrees(rotation + 24),
-                            endAngle: .degrees(rotation + 384)
-                        ),
-                        style: StrokeStyle(lineWidth: item.thickness, lineCap: .round, lineJoin: .round)
-                    )
-
-                RoundedRectangle(cornerRadius: max(0, radius - item.thickness), style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.18), lineWidth: max(1, item.thickness * 0.35))
-                    .padding(item.thickness)
+                    .opacity(0.88)
 
                 if !item.message.isEmpty {
                     Text(item.message)
@@ -679,12 +676,50 @@ struct SiriV2AroundLoaderView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(.black.opacity(0.58), in: Capsule())
+                    .background(.black.opacity(0.58), in: Capsule())
                 }
             }
-            .padding(inset)
+            .compositingGroup()
+            .ignoresSafeArea()
         }
         .accessibilityLabel(item.accessibilityLabel ?? item.message.ifEmpty("Loading"))
+    }
+}
+
+struct SiriV2EdgeBandShape: Shape {
+    var thickness: CGFloat
+    var cornerRadius: CGFloat
+    var phase: CGFloat
+    var wobble: CGFloat
+
+    var animatableData: CGFloat {
+        get { phase }
+        set { phase = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let topInset = wobble * (0.55 + 0.45 * sin(phase + 0.2))
+        let rightInset = wobble * (0.55 + 0.45 * sin(phase + 1.6))
+        let bottomInset = wobble * (0.55 + 0.45 * sin(phase + 3.0))
+        let leftInset = wobble * (0.55 + 0.45 * sin(phase + 4.4))
+        let outer = rect.insetBy(dx: -thickness * 0.3, dy: -thickness * 0.3)
+        let inner = CGRect(
+            x: rect.minX + thickness + leftInset,
+            y: rect.minY + thickness + topInset,
+            width: max(0, rect.width - (thickness * 2) - leftInset - rightInset),
+            height: max(0, rect.height - (thickness * 2) - topInset - bottomInset)
+        )
+
+        var path = Path()
+        path.addRoundedRect(
+            in: outer,
+            cornerSize: CGSize(width: cornerRadius + thickness, height: cornerRadius + thickness)
+        )
+        path.addRoundedRect(
+            in: inner,
+            cornerSize: CGSize(width: max(0, cornerRadius - thickness), height: max(0, cornerRadius - thickness))
+        )
+        return path
     }
 }
 
