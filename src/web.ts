@@ -256,7 +256,7 @@ export class NativeLoaderWeb extends WebPlugin implements NativeLoaderPlugin {
 
   private render(options: RequiredOptions): HTMLElement {
     const wrapper = document.createElement('div');
-    wrapper.className = `native-loader native-loader-${options.placement}`;
+    wrapper.className = `native-loader native-loader-${options.placement} native-loader-style-wrapper-${options.style}`;
     wrapper.dataset.id = options.id;
     wrapper.style.setProperty('--loader-size', `${options.size}px`);
     wrapper.style.setProperty('--loader-thickness', `${options.thickness}px`);
@@ -280,6 +280,15 @@ export class NativeLoaderWeb extends WebPlugin implements NativeLoaderPlugin {
       wrapper.style.top = `${options.frame.y}px`;
       wrapper.style.width = `${options.frame.width}px`;
       wrapper.style.height = `${options.frame.height}px`;
+    }
+
+    if (options.style === 'chrome') {
+      const chrome = this.renderGraphic(options);
+      chrome.setAttribute('role', 'status');
+      chrome.setAttribute('aria-live', 'polite');
+      chrome.setAttribute('aria-label', options.accessibilityLabel ?? options.message ?? 'Loading');
+      wrapper.appendChild(chrome);
+      return wrapper;
     }
 
     const card = document.createElement('div');
@@ -315,9 +324,11 @@ export class NativeLoaderWeb extends WebPlugin implements NativeLoaderPlugin {
 
     if (options.progress !== undefined) {
       graphic.style.setProperty('--loader-progress', `${Math.max(0, Math.min(1, options.progress)) * 360}deg`);
+      graphic.style.setProperty('--loader-progress-ratio', String(Math.max(0, Math.min(1, options.progress))));
+      graphic.classList.add('native-loader--determinate');
     }
 
-    const count = options.style === 'bars' ? 5 : options.style === 'dots' ? 3 : 4;
+    const count = options.style === 'chrome' ? 0 : options.style === 'bars' ? 5 : options.style === 'dots' ? 3 : 4;
     for (let index = 0; index < count; index += 1) {
       const child = document.createElement('span');
       child.style.setProperty('--loader-index', String(index));
@@ -363,6 +374,12 @@ const css = `
 .native-loader-top {
   align-items: flex-start;
   justify-content: center;
+}
+
+.native-loader-style-wrapper-chrome {
+  align-items: flex-start;
+  justify-content: stretch;
+  padding: max(env(safe-area-inset-top), 0px) 0 0;
 }
 
 .native-loader-bottom {
@@ -432,6 +449,36 @@ const css = `
 
 .native-loader-graphic {
   position: relative;
+}
+
+.native-loader-style-chrome {
+  width: 100%;
+  height: max(var(--loader-thickness), 3px);
+  min-height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--loader-color-1), transparent 82%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--loader-color-2), transparent 62%);
+}
+
+.native-loader-style-chrome::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--loader-color-1), var(--loader-color-2), var(--loader-color-3));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--loader-color-2), transparent 38%);
+  animation: native-loader-chrome calc(1200ms * var(--loader-speed)) ease-in-out infinite;
+}
+
+.native-loader-style-chrome.native-loader--determinate::before {
+  width: 100%;
+  animation: none;
+  transform: scaleX(var(--loader-progress-ratio, 0));
+  transform-origin: left center;
 }
 
 .native-loader-style-siri span {
@@ -581,5 +628,11 @@ const css = `
 @keyframes native-loader-wave {
   0%, 100% { transform: translateY(-120%) scaleX(0.6); opacity: 0.45; }
   50% { transform: translateY(120%) scaleX(1); opacity: 1; }
+}
+
+@keyframes native-loader-chrome {
+  0% { transform: translateX(-110%) scaleX(0.72); opacity: 0.62; }
+  46% { transform: translateX(128%) scaleX(1.18); opacity: 1; }
+  100% { transform: translateX(250%) scaleX(0.8); opacity: 0.72; }
 }
 `;

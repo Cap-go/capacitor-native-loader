@@ -1,14 +1,17 @@
 package app.capgo.nativeloader
 
 import android.animation.ValueAnimator
+import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.SweepGradient
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
@@ -20,6 +23,8 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowInsets
+import android.view.animation.LinearInterpolator
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -30,6 +35,7 @@ import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import java.io.File
 import java.net.URL
+import java.net.URLDecoder
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import kotlin.math.PI
@@ -322,7 +328,7 @@ class NativeLoaderOverlay(private val activity: Activity) {
     }
 
     private fun collectHitViews(view: View): List<View> {
-        val tag = view.getTag(HIT_VIEW_TAG)
+        val tag = view.getTag(R.id.native_loader_hit_view)
         if (tag == true) return listOf(view)
         if (view is ViewGroup) {
             return (0 until view.childCount).flatMap { collectHitViews(view.getChildAt(it)) }
@@ -337,8 +343,21 @@ class NativeLoaderOverlay(private val activity: Activity) {
 
         if (item.placement == "around") {
             val around = AroundLoaderView(activity, item)
-            around.setTag(HIT_VIEW_TAG, true)
+            around.setTag(R.id.native_loader_hit_view, true)
             container.addView(around, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            return container
+        }
+
+        if (item.style == "chrome") {
+            val chrome = buildGraphic(item)
+            chrome.setTag(R.id.native_loader_hit_view, true)
+            val params = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                dp(max(item.thickness, 3.0)),
+                Gravity.TOP,
+            )
+            params.topMargin = contentTopOffset()
+            container.addView(chrome, params)
             return container
         }
 
@@ -353,7 +372,7 @@ class NativeLoaderOverlay(private val activity: Activity) {
             setColor(item.backgroundColor ?: Color.argb(174, 10, 12, 18))
             setStroke(1, Color.argb(24, 255, 255, 255))
         }
-        card.setTag(HIT_VIEW_TAG, true)
+        card.setTag(R.id.native_loader_hit_view, true)
 
         val graphic = buildGraphic(item)
         card.addView(graphic, LinearLayout.LayoutParams(dp(item.size), dp(item.size)))
@@ -392,6 +411,9 @@ class NativeLoaderOverlay(private val activity: Activity) {
                 repeatCount = if (item.asset.loop) LottieDrawable.INFINITE else 0
                 speed = item.asset.speed.toFloat()
                 scaleType = ImageView.ScaleType.FIT_CENTER
+                addLottieOnCompositionLoadedListener {
+                    if (item.asset.autoPlay) playAnimation()
+                }
                 loadLottie(item.asset, this)
                 if (item.asset.autoPlay) playAnimation()
             }
@@ -401,6 +423,26 @@ class NativeLoaderOverlay(private val activity: Activity) {
             return AppCompatImageView(activity).apply {
                 scaleType = ImageView.ScaleType.FIT_CENTER
                 loadImage(item.asset.source, this)
+                if (item.progress != null) {
+                    rotation = (item.progress * 360).toFloat()
+                } else if (item.asset.autoPlay && !nativeLoaderShouldPauseMotion(activity, item)) {
+                    val cycleDuration = max(120.0, item.duration / max(0.1, item.asset.speed)).toLong()
+                    val animator = ObjectAnimator.ofFloat(this, View.ROTATION, 0f, 360f).apply {
+                        duration = cycleDuration
+                        repeatCount = if (item.asset.loop) ValueAnimator.INFINITE else 0
+                        interpolator = LinearInterpolator()
+                    }
+                    addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                        override fun onViewAttachedToWindow(view: View) {
+                            animator.start()
+                        }
+
+                        override fun onViewDetachedFromWindow(view: View) {
+                            animator.cancel()
+                        }
+                    })
+                    if (isAttachedToWindow) animator.start()
+                }
             }
         }
 
@@ -413,6 +455,7 @@ class NativeLoaderOverlay(private val activity: Activity) {
             source.startsWith("data:") -> dataFromDataUrl(source)?.toString(Charsets.UTF_8)?.let {
                 view.setAnimationFromJson(it, "native-loader-${UUID.randomUUID()}")
             }
+            source.trimStart().startsWith("{") -> view.setAnimationFromJson(source, "native-loader-${UUID.randomUUID()}")
             source.startsWith("http://") || source.startsWith("https://") -> view.setAnimationFromUrl(source)
             source.startsWith("file://") -> view.setAnimationFromJson(File(URL(source).path).readText(), source)
             File(source).exists() -> view.setAnimationFromJson(File(source).readText(), source)
@@ -448,9 +491,17 @@ class NativeLoaderOverlay(private val activity: Activity) {
 
     private fun dp(value: Number): Int = value.toDouble().toPx(activity)
 
-    companion object {
-        private const val HIT_VIEW_TAG = 918371
+    private fun contentTopOffset(): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return activity.window.decorView.rootWindowInsets
+                ?.getInsets(WindowInsets.Type.statusBars())
+                ?.top
+                ?: 0
+        }
+        val id = activity.resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (id > 0) activity.resources.getDimensionPixelSize(id) else 0
     }
+
 }
 
 class LoaderOverlayLayout(context: Context) : FrameLayout(context) {
@@ -501,6 +552,7 @@ class NativeLoaderGraphicView(context: Context, private val item: LoaderItem) : 
         super.onDraw(canvas)
         val time = animationTime()
         when (item.style) {
+            "chrome" -> drawChrome(canvas, time)
             "orbit" -> drawOrbit(canvas, time)
             "ring" -> drawRing(canvas, time)
             "pulse" -> drawPulse(canvas, time)
@@ -510,6 +562,45 @@ class NativeLoaderGraphicView(context: Context, private val item: LoaderItem) : 
             "halo" -> drawHalo(canvas, time)
             else -> drawSiri(canvas, time)
         }
+    }
+
+    private fun drawChrome(canvas: Canvas, time: Double) {
+        val thickness = max(2f, min(height.toFloat(), item.thicknessPx(context)))
+        val top = (height - thickness) / 2f
+        val track = RectF(0f, top, width.toFloat(), top + thickness)
+        paint.maskFilter = null
+        paint.shader = null
+        paint.color = withAlpha(item.colors[0], 46)
+        canvas.drawRoundRect(track, thickness / 2f, thickness / 2f, paint)
+
+        val progress = item.progress
+        val segmentWidth = if (progress != null) {
+            width * progress.toFloat()
+        } else {
+            max(width * 0.42f, thickness * 12f)
+        }
+        if (segmentWidth <= 0f) return
+
+        val left = if (progress != null) {
+            0f
+        } else {
+            val phase = (time % 1.0).toFloat()
+            -segmentWidth + (width + segmentWidth * 2f) * phase
+        }
+        val bar = RectF(left, top, left + segmentWidth, top + thickness)
+        paint.maskFilter = BlurMaskFilter(thickness * 1.5f, BlurMaskFilter.Blur.NORMAL)
+        paint.shader = null
+        paint.color = withAlpha(item.colors[1], 70)
+        canvas.drawRoundRect(
+            RectF(bar.left - thickness * 2f, bar.top - thickness, bar.right + thickness * 2f, bar.bottom + thickness),
+            thickness,
+            thickness,
+            paint,
+        )
+        paint.maskFilter = null
+        paint.shader = LinearGradient(left, top, left + segmentWidth, top, item.colors, null, Shader.TileMode.CLAMP)
+        canvas.drawRoundRect(bar, thickness / 2f, thickness / 2f, paint)
+        paint.shader = null
     }
 
     private fun drawSiri(canvas: Canvas, time: Double) {
@@ -844,9 +935,19 @@ private fun parseRgba(value: String): Int {
 
 private fun defaultDuration(style: String): Double = when (style) {
     "siri" -> 1500.0
+    "chrome" -> 1200.0
     "pulse" -> 1350.0
     "dots", "bars" -> 780.0
     else -> 1100.0
+}
+
+private fun nativeLoaderShouldPauseMotion(context: Context, item: LoaderItem): Boolean {
+    val animatorsEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        ValueAnimator.areAnimatorsEnabled()
+    } else {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
+    }
+    return item.reducedMotion == "pause" || (item.reducedMotion == "system" && !animatorsEnabled)
 }
 
 private fun number(value: Any?): Double? {
@@ -873,7 +974,15 @@ private fun withAlpha(color: Int, alpha: Int): Int = Color.argb(alpha.coerceIn(0
 private fun dataFromDataUrl(source: String): ByteArray? {
     val payload = source.substringAfter(",", "")
     if (payload.isEmpty()) return null
-    return Base64.decode(payload, Base64.DEFAULT)
+    return try {
+        if (source.substringBefore(",", "").contains(";base64", ignoreCase = true)) {
+            Base64.decode(payload, Base64.DEFAULT)
+        } else {
+            URLDecoder.decode(payload, Charsets.UTF_8.name()).toByteArray(Charsets.UTF_8)
+        }
+    } catch (_: IllegalArgumentException) {
+        null
+    }
 }
 
 private fun MotionEvent.isInside(view: View): Boolean {

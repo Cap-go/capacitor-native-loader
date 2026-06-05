@@ -47,7 +47,8 @@ import Lottie
             window.blocksTouches = nextItems.contains { $0.interactionMode == .block }
             window.loaderOnlyTouches = nextItems.contains { $0.interactionMode == .loaderOnly }
             window.isHidden = false
-            window.makeKey()
+            self.refreshOverlayView()
+            self.syncTouchRouting(for: window)
 
             self.scheduleAutoHide(for: item)
 
@@ -72,6 +73,8 @@ import Lottie
             window.items = nextItems
             window.blocksTouches = nextItems.contains { $0.interactionMode == .block }
             window.loaderOnlyTouches = nextItems.contains { $0.interactionMode == .loaderOnly }
+            self.refreshOverlayView()
+            self.syncTouchRouting(for: window)
 
             self.scheduleAutoHide(for: item)
         }
@@ -88,6 +91,7 @@ import Lottie
             var nextItems = window.items
             nextItems[index] = NativeLoaderItem(options: options)
             window.items = nextItems
+            self.refreshOverlayView()
         }
     }
 
@@ -104,6 +108,7 @@ import Lottie
                 window.items.removeAll { $0.id == targetId }
                 window.blocksTouches = window.items.contains { $0.interactionMode == .block }
                 window.loaderOnlyTouches = window.items.contains { $0.interactionMode == .loaderOnly }
+                self.refreshOverlayView()
                 if window.items.isEmpty {
                     window.resignKey()
                     window.isHidden = true
@@ -111,11 +116,14 @@ import Lottie
                     if restoreWebView && self.shouldRestoreWebViewOnHide {
                         self.resetWebViewLayout(animated: animated)
                     }
+                } else {
+                    self.syncTouchRouting(for: window)
                 }
             }
 
             if animated {
                 window.leavingIds.insert(targetId)
+                self.refreshOverlayView()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.18, execute: remove)
             } else {
                 remove()
@@ -134,6 +142,7 @@ import Lottie
                 window.leavingIds.removeAll()
                 window.blocksTouches = false
                 window.loaderOnlyTouches = false
+                self.refreshOverlayView()
                 window.resignKey()
                 window.isHidden = true
                 self.restoreKeyWindow()
@@ -144,6 +153,7 @@ import Lottie
 
             if animated {
                 window.leavingIds = Set(window.items.map(\.id))
+                self.refreshOverlayView()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.18, execute: remove)
             } else {
                 remove()
@@ -244,16 +254,33 @@ import Lottie
         let window = NativeLoaderWindow(windowScene: scene)
         window.windowLevel = .alert + 2
         window.backgroundColor = .clear
+        window.isOpaque = false
         window.isHidden = true
         window.tag = 1017
 
         let hosting = UIHostingController(rootView: NativeLoaderRootView(window: window))
         hosting.view.backgroundColor = .clear
+        hosting.view.isOpaque = false
         window.rootViewController = hosting
 
         overlayWindow = window
         hostingController = hosting
         return window
+    }
+
+    private func refreshOverlayView() {
+        guard let window = overlayWindow else { return }
+        hostingController?.rootView = NativeLoaderRootView(window: window)
+    }
+
+    private func syncTouchRouting(for window: NativeLoaderWindow) {
+        guard !window.items.isEmpty else { return }
+        window.makeKeyAndVisible()
+        if window.blocksTouches || window.loaderOnlyTouches {
+            return
+        } else {
+            restoreKeyWindow()
+        }
     }
 
     private func scheduleAutoHide(for item: NativeLoaderItem) {
@@ -374,6 +401,7 @@ struct NativeLoaderItem: Identifiable {
 
 enum LoaderStyle: String {
     case siri
+    case chrome
     case orbit
     case ring
     case pulse
@@ -461,6 +489,20 @@ struct NativeLoaderRootView: View {
             AroundLoaderView(item: item)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .ignoresSafeArea()
+        } else if item.style == .chrome {
+            ChromeLoader(item: item)
+                .frame(height: max(item.thickness, 3))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, geometry.safeAreaInsets.top)
+                .accessibilityLabel(item.accessibilityLabel ?? item.message.ifEmpty("Loading"))
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(
+                            key: LoaderFramePreferenceKey.self,
+                            value: [item.id: geo.frame(in: .named("NativeLoaderWindow"))]
+                        )
+                    }
+                )
         } else {
             LoaderCardView(item: item)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment(for: item.placement))
@@ -597,12 +639,14 @@ struct LoaderGraphicView: View {
             }
         case .image:
             if let asset = item.asset {
-                NativeImageLoaderView(asset: asset)
+                NativeImageAssetLoader(item: item, asset: asset, reduceMotion: reduceMotion)
             } else {
                 HaloLoader(item: item, reduceMotion: reduceMotion)
             }
         case .siri:
             SiriLoader(item: item, reduceMotion: reduceMotion)
+        case .chrome:
+            ChromeLoader(item: item)
         case .orbit:
             OrbitLoader(item: item, reduceMotion: reduceMotion)
         case .ring:
@@ -617,6 +661,61 @@ struct LoaderGraphicView: View {
             WaveLoader(item: item, reduceMotion: reduceMotion)
         case .halo:
             HaloLoader(item: item, reduceMotion: reduceMotion)
+        }
+    }
+}
+
+struct ChromeLoader: View {
+    let item: NativeLoaderItem
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let time = animationTime(context.date, item: item, reduceMotion: reduceMotion)
+            Canvas { canvas, size in
+                let thickness = max(2, min(item.thickness, size.height))
+                let track = CGRect(
+                    x: 0,
+                    y: (size.height - thickness) / 2,
+                    width: size.width,
+                    height: thickness
+                )
+                canvas.fill(
+                    Path(roundedRect: track, cornerRadius: thickness / 2),
+                    with: .color(item.colors[0].opacity(0.18))
+                )
+
+                let bar: CGRect
+                if let progress = item.progress {
+                    bar = CGRect(
+                        x: 0,
+                        y: track.minY,
+                        width: size.width * max(0, min(1, progress)),
+                        height: thickness
+                    )
+                } else {
+                    let phase = time.truncatingRemainder(dividingBy: 1)
+                    let segmentWidth = max(size.width * 0.42, thickness * 12)
+                    let xOffset = -segmentWidth + (size.width + segmentWidth * 2) * phase
+                    bar = CGRect(x: xOffset, y: track.minY, width: segmentWidth, height: thickness)
+                }
+
+                guard bar.width > 0 else { return }
+
+                let glow = bar.insetBy(dx: -thickness * 2, dy: -thickness)
+                canvas.fill(
+                    Path(roundedRect: glow, cornerRadius: glow.height / 2),
+                    with: .color(item.colors[1].opacity(0.18))
+                )
+                canvas.fill(
+                    Path(roundedRect: bar, cornerRadius: thickness / 2),
+                    with: .linearGradient(
+                        Gradient(colors: item.colors),
+                        startPoint: CGPoint(x: bar.minX, y: track.midY),
+                        endPoint: CGPoint(x: bar.maxX, y: track.midY)
+                    )
+                )
+            }
         }
     }
 }
@@ -864,9 +963,14 @@ struct NativeLottieView: UIViewRepresentable {
     private func load(asset: LoaderAsset, into view: LottieAnimationView) {
         let source = asset.source
         if source.hasPrefix("data:"), let data = dataFromDataUrl(source) {
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent("native-loader-\(UUID().uuidString).json")
-            try? data.write(to: url)
-            view.animation = LottieAnimation.filepath(url.path)
+            view.animation = lottieAnimation(from: data)
+            if asset.autoPlay { view.play() }
+            return
+        }
+
+        if let data = source.trimmingCharacters(in: .whitespacesAndNewlines).data(using: .utf8),
+           source.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{") {
+            view.animation = lottieAnimation(from: data)
             if asset.autoPlay { view.play() }
             return
         }
@@ -892,6 +996,16 @@ struct NativeLottieView: UIViewRepresentable {
 
         if asset.autoPlay {
             view.play()
+        }
+    }
+
+    private func lottieAnimation(from data: Data) -> LottieAnimation? {
+        do {
+            return try LottieAnimation.from(data: data)
+        } catch {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("native-loader-\(UUID().uuidString).json")
+            try? data.write(to: url)
+            return LottieAnimation.filepath(url.path)
         }
     }
 }
@@ -927,6 +1041,33 @@ struct NativeImageLoaderView: UIViewRepresentable {
     }
 }
 
+struct NativeImageAssetLoader: View {
+    let item: NativeLoaderItem
+    let asset: LoaderAsset
+    let reduceMotion: Bool
+
+    private var paused: Bool {
+        item.progress != nil || !asset.autoPlay || item.reducedMotion == .pause || (reduceMotion && item.reducedMotion == .system)
+    }
+
+    var body: some View {
+        TimelineView(.animation(paused: paused)) { timeline in
+            NativeImageLoaderView(asset: asset)
+                .rotationEffect(.degrees(rotation(at: timeline.date)))
+        }
+    }
+
+    private func rotation(at date: Date) -> Double {
+        if let progress = item.progress {
+            return progress * 360
+        }
+        guard asset.autoPlay else { return 0 }
+        let cycles = animationTime(date, item: item, reduceMotion: reduceMotion)
+        let visibleCycle = asset.loop ? cycles.truncatingRemainder(dividingBy: 1) : min(cycles, 1)
+        return visibleCycle * 360
+    }
+}
+
 struct LoaderFramePreferenceKey: PreferenceKey {
     static var defaultValue: [String: CGRect] = [:]
 
@@ -947,6 +1088,8 @@ private func defaultDuration(for style: LoaderStyle) -> Double {
     switch style {
     case .siri:
         return 1500
+    case .chrome:
+        return 1200
     case .pulse:
         return 1350
     case .dots, .bars:
@@ -1063,8 +1206,12 @@ private func bool(_ value: Any?) -> Bool? {
 
 private func dataFromDataUrl(_ source: String) -> Data? {
     guard let comma = source.firstIndex(of: ",") else { return nil }
+    let metadata = String(source[..<comma]).lowercased()
     let payload = String(source[source.index(after: comma)...])
-    return Data(base64Encoded: payload)
+    if metadata.contains(";base64") {
+        return Data(base64Encoded: payload)
+    }
+    return payload.removingPercentEncoding?.data(using: .utf8)
 }
 
 private extension String {

@@ -11,7 +11,7 @@ Native animated loaders for Capacitor apps. Render loaders above the WebView wit
 
 ## Features
 
-- Native loader styles: `siri`, `orbit`, `ring`, `pulse`, `dots`, `bars`, `wave`, `halo`, and `around`.
+- Native loader styles: `siri`, `chrome`, `orbit`, `ring`, `pulse`, `dots`, `bars`, `wave`, `halo`, and `around`.
 - Asset loaders: native Lottie JSON and native image views from bundled assets, file URLs, remote URLs, or data URLs.
 - Placements: center, top, bottom, left, right, fullscreen, around the screen, or custom frame.
 - Transparent overlays with pass-through, blocking, or loader-only touch handling.
@@ -23,18 +23,20 @@ Native animated loaders for Capacitor apps. Render loaders above the WebView wit
 
 | Loader | Demo | Loader | Demo |
 | ------ | ---- | ------ | ---- |
-| Siri | ![Siri loader](docs/previews/siri.webp) | Orbit | ![Orbit loader](docs/previews/orbit.webp) |
-| Ring | ![Ring loader](docs/previews/ring.webp) | Pulse | ![Pulse loader](docs/previews/pulse.webp) |
-| Dots | ![Dots loader](docs/previews/dots.webp) | Bars | ![Bars loader](docs/previews/bars.webp) |
-| Wave | ![Wave loader](docs/previews/wave.webp) | Halo | ![Halo loader](docs/previews/halo.webp) |
-| Around | ![Around loader](docs/previews/around.webp) | Lottie | ![Lottie loader](docs/previews/lottie.webp) |
-| Image | ![Image loader](docs/previews/image.webp) |  |  |
+| Siri | ![Siri loader](docs/previews/siri.webp) | Chrome top | ![Chrome top loader](docs/previews/chrome.webp) |
+| Ring | ![Ring loader](docs/previews/ring.webp) | Dots | ![Dots loader](docs/previews/dots.webp) |
+| Bars | ![Bars loader](docs/previews/bars.webp) | Wave | ![Wave loader](docs/previews/wave.webp) |
+| Orbit | ![Orbit loader](docs/previews/orbit.webp) | Pulse | ![Pulse loader](docs/previews/pulse.webp) |
+| Halo | ![Halo loader](docs/previews/halo.webp) | Around | ![Around loader](docs/previews/around.webp) |
+| Lottie | ![Lottie loader](docs/previews/lottie.webp) | Image | ![Image loader](docs/previews/image.webp) |
 
 Regenerate previews with:
 
 ```bash
 bun run previews
 ```
+
+The preview clips are captured from the example app running in a real simulator/emulator and sliced into WebP demos.
 
 ## Install
 
@@ -77,6 +79,25 @@ const loader = await NativeLoader.show({
 
 await NativeLoader.setProgress({ id: loader.id, progress: 0.72 });
 await NativeLoader.hide({ id: loader.id });
+```
+
+## Chrome-Style Top Progress
+
+```typescript
+const loader = await NativeLoader.show({
+  style: 'chrome',
+  placement: 'top',
+  colors: ['#4285f4', '#34a853', '#fbbc05', '#ea4335'],
+  thickness: 4,
+  interactionMode: 'passThrough',
+  webView: {
+    mode: 'resize',
+    insets: { top: 12 },
+    restoreOnHide: true,
+  },
+});
+
+await NativeLoader.hide({ id: loader.id, restoreWebView: true });
 ```
 
 ## Lottie And Image Assets
@@ -385,9 +406,9 @@ Native file, bundled asset, remote URL, or data URL used by `lottie` and `image`
 | -------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`source`**   | <code>string</code>                                                     | Asset path or URL. Supported forms: - app bundle asset name, for example `loader.json` - `file://` URL - `https://` or `http://` URL - `data:application/json;base64,...` for Lottie JSON - `data:image/...;base64,...` for images |
 | **`type`**     | <code><a href="#nativeloaderassettype">NativeLoaderAssetType</a></code> | Explicit asset type. Defaults to the current loader `style`.                                                                                                                                                                       |
-| **`loop`**     | <code>boolean</code>                                                    | Repeat asset animation. Defaults to `true` for Lottie.                                                                                                                                                                             |
-| **`speed`**    | <code>number</code>                                                     | Asset animation speed multiplier. Defaults to `1`.                                                                                                                                                                                 |
-| **`autoPlay`** | <code>boolean</code>                                                    | Start asset animation immediately. Defaults to `true`.                                                                                                                                                                             |
+| **`loop`**     | <code>boolean</code>                                                    | Repeat asset animation. Defaults to `true`. Lottie assets loop their composition. Image assets loop their native rotation.                                                                                                         |
+| **`speed`**    | <code>number</code>                                                     | Asset animation speed multiplier. Defaults to `1`. Applies to Lottie playback speed and image rotation speed.                                                                                                                      |
+| **`autoPlay`** | <code>boolean</code>                                                    | Start asset animation immediately. Defaults to `true`. For image assets, this starts the native rotation loader.                                                                                                                   |
 
 
 #### NativeLoaderWebViewLayout
@@ -481,6 +502,7 @@ Plugin version payload.
 Built-in native loader renderer.
 
 - `siri`: blurred, rotating multi-orb loader inspired by assistant listening UI.
+- `chrome`: full-width top edge progress bar inspired by browser page loading UI.
 - `orbit`: dots orbiting a transparent center.
 - `ring`: rotating stroked ring.
 - `pulse`: expanding translucent ripples.
@@ -489,9 +511,9 @@ Built-in native loader renderer.
 - `wave`: flowing horizontal wave.
 - `halo`: glowing radial halo.
 - `lottie`: native Lottie JSON animation from `asset`.
-- `image`: native image view from `asset`.
+- `image`: native image view from `asset`, rotating when `autoPlay` is enabled.
 
-<code>'siri' | 'orbit' | 'ring' | 'pulse' | 'dots' | 'bars' | 'wave' | 'halo' | 'lottie' | 'image'</code>
+<code>'siri' | 'chrome' | 'orbit' | 'ring' | 'pulse' | 'dots' | 'bars' | 'wave' | 'halo' | 'lottie' | 'image'</code>
 
 
 #### NativeLoaderPlacement

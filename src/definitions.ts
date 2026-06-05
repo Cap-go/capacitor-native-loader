@@ -2,6 +2,7 @@
  * Built-in native loader renderer.
  *
  * - `siri`: blurred, rotating multi-orb loader inspired by assistant listening UI.
+ * - `chrome`: full-width top edge progress bar inspired by browser page loading UI.
  * - `orbit`: dots orbiting a transparent center.
  * - `ring`: rotating stroked ring.
  * - `pulse`: expanding translucent ripples.
@@ -10,10 +11,11 @@
  * - `wave`: flowing horizontal wave.
  * - `halo`: glowing radial halo.
  * - `lottie`: native Lottie JSON animation from `asset`.
- * - `image`: native image view from `asset`.
+ * - `image`: native image view from `asset`, rotating when `autoPlay` is enabled.
  */
 export type NativeLoaderStyle =
   | 'siri'
+  | 'chrome'
   | 'orbit'
   | 'ring'
   | 'pulse'
@@ -121,17 +123,23 @@ export interface NativeLoaderAsset {
   type?: NativeLoaderAssetType;
 
   /**
-   * Repeat asset animation. Defaults to `true` for Lottie.
+   * Repeat asset animation. Defaults to `true`.
+   *
+   * Lottie assets loop their composition. Image assets loop their native rotation.
    */
   loop?: boolean;
 
   /**
    * Asset animation speed multiplier. Defaults to `1`.
+   *
+   * Applies to Lottie playback speed and image rotation speed.
    */
   speed?: number;
 
   /**
    * Start asset animation immediately. Defaults to `true`.
+   *
+   * For image assets, this starts the native rotation loader.
    */
   autoPlay?: boolean;
 }
