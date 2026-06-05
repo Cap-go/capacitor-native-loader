@@ -2,6 +2,7 @@
  * Built-in native loader renderer.
  *
  * - `siri`: blurred, rotating multi-orb loader inspired by assistant listening UI.
+ * - `siri-v2`: full-screen Siri-style color motion around the screen edge.
  * - `chrome`: full-width top edge progress bar inspired by browser page loading UI.
  * - `orbit`: dots orbiting a transparent center.
  * - `ring`: rotating stroked ring.
@@ -15,6 +16,7 @@
  */
 export type NativeLoaderStyle =
   | 'siri'
+  | 'siri-v2'
   | 'chrome'
   | 'orbit'
   | 'ring'

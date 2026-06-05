@@ -341,6 +341,13 @@ class NativeLoaderOverlay(private val activity: Activity) {
         container.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
         item.scrimColor?.let { container.setBackgroundColor(it) }
 
+        if (item.style == "siri-v2") {
+            val edge = SiriV2AroundLoaderView(activity, item)
+            edge.setTag(R.id.native_loader_hit_view, true)
+            container.addView(edge, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            return container
+        }
+
         if (item.placement == "around") {
             val around = AroundLoaderView(activity, item)
             around.setTag(R.id.native_loader_hit_view, true)
@@ -785,6 +792,81 @@ class AroundLoaderView(context: Context, private val item: LoaderItem) : View(co
     }
 }
 
+class SiriV2AroundLoaderView(context: Context, private val item: LoaderItem) : View(context) {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+    private val startTime = System.currentTimeMillis()
+    private val tick = object : Runnable {
+        override fun run() {
+            invalidate()
+            postOnAnimation(this)
+        }
+    }
+
+    init {
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (!nativeLoaderShouldPauseMotion(context, item)) {
+            postOnAnimation(tick)
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(tick)
+        super.onDetachedFromWindow()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val time = animationTime()
+        val thickness = max(item.thicknessPx(context), 4f)
+        val inset = max(thickness * 1.1f, 8f)
+        val rect = RectF(inset, inset, width - inset, height - inset)
+        val radius = min(width, height) * 0.07f
+        val centerX = width / 2f
+        val centerY = height / 2f
+
+        paint.shader = null
+        paint.maskFilter = null
+        paint.strokeWidth = thickness
+        paint.color = withAlpha(Color.WHITE, 20)
+        canvas.drawRoundRect(rect, radius, radius, paint)
+
+        paint.shader = SweepGradient(centerX, centerY, item.colors + item.colors.first(), null)
+        paint.strokeWidth = thickness * 2.2f
+        paint.maskFilter = BlurMaskFilter(thickness * 2.5f, BlurMaskFilter.Blur.NORMAL)
+        canvas.save()
+        canvas.rotate((time * 150).toFloat(), centerX, centerY)
+        canvas.drawRoundRect(rect, radius, radius, paint)
+        canvas.restore()
+
+        paint.maskFilter = null
+        paint.strokeWidth = thickness
+        canvas.save()
+        canvas.rotate((time * 150 + 28).toFloat(), centerX, centerY)
+        canvas.drawRoundRect(rect, radius, radius, paint)
+        canvas.restore()
+
+        paint.shader = null
+        paint.strokeWidth = max(2f, thickness * 0.42f)
+        paint.color = withAlpha(Color.WHITE, 72)
+        val highlight = RectF(rect.left + thickness, rect.top + thickness, rect.right - thickness, rect.bottom - thickness)
+        canvas.drawRoundRect(highlight, max(0f, radius - thickness), max(0f, radius - thickness), paint)
+    }
+
+    private fun animationTime(): Double {
+        if (nativeLoaderShouldPauseMotion(context, item)) return 0.0
+        val durationScale = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        val scale = if (item.reducedMotion == "slow" || (item.reducedMotion == "system" && durationScale > 1f)) 0.35 else 1.0
+        return ((System.currentTimeMillis() - startTime).toDouble() / item.duration) * item.speed * scale
+    }
+}
+
 data class LoaderItem(val rawOptions: Map<String, Any?>) {
     val id: String = rawOptions["id"] as? String ?: "loader-${UUID.randomUUID()}"
     val style: String = rawOptions["style"] as? String ?: "siri"
@@ -935,6 +1017,7 @@ private fun parseRgba(value: String): Int {
 
 private fun defaultDuration(style: String): Double = when (style) {
     "siri" -> 1500.0
+    "siri-v2" -> 1600.0
     "chrome" -> 1200.0
     "pulse" -> 1350.0
     "dots", "bars" -> 780.0

@@ -66,27 +66,38 @@ const assetForStyle = (selectedStyle) => {
 
 const options = () => {
   const selectedPlacement =
-    placement.value === 'around' || style.value === 'around' ? 'around' : style.value === 'chrome' ? 'top' : placement.value;
+    placement.value === 'around' || style.value === 'around'
+      ? 'around'
+      : style.value === 'chrome'
+        ? 'top'
+        : style.value === 'siri-v2'
+          ? 'fullscreen'
+          : placement.value;
   const selectedStyle = style.value === 'around' ? 'halo' : style.value;
   const isChrome = selectedStyle === 'chrome';
+  const isSiriV2 = selectedStyle === 'siri-v2';
 
   return {
     id: currentId,
     style: selectedStyle,
     placement: selectedPlacement,
-    message: isChrome ? '' : message.value,
+    message: isChrome || isSiriV2 ? '' : message.value,
     colors: isChrome ? chromeColors : colors,
-    size: isChrome ? 1 : 104,
-    thickness: isChrome ? 4 : 6,
+    size: isChrome || isSiriV2 ? 1 : 104,
+    thickness: isChrome ? 4 : isSiriV2 ? 10 : 6,
     progress: Number(progress.value) / 100,
     interactionMode: interactionMode.value,
-    scrimColor: selectedPlacement === 'fullscreen' ? 'rgba(3, 7, 18, 0.42)' : undefined,
+    scrimColor: isSiriV2 ? 'rgba(3, 7, 18, 0.10)' : selectedPlacement === 'fullscreen' ? 'rgba(3, 7, 18, 0.42)' : undefined,
     accessibilityLabel: message.value || 'Loading',
     asset: assetForStyle(selectedStyle),
     webView: resizeWebView.checked
       ? {
           mode: 'resize',
-          insets: selectedPlacement === 'top' ? { top: isChrome ? 12 : 96 } : { bottom: 96 },
+          insets: isSiriV2
+            ? { top: 18, right: 18, bottom: 18, left: 18 }
+            : selectedPlacement === 'top'
+              ? { top: isChrome ? 12 : 96 }
+              : { bottom: 96 },
           restoreOnHide: true,
         }
       : undefined,
@@ -100,6 +111,14 @@ const recordingDemos = [
     message: 'Siri-style loader',
     size: 132,
     scrimColor: 'rgba(3, 7, 18, 0.28)',
+  },
+  {
+    style: 'siri-v2',
+    placement: 'fullscreen',
+    message: '',
+    size: 1,
+    thickness: 10,
+    scrimColor: 'rgba(3, 7, 18, 0.10)',
   },
   {
     style: 'chrome',
@@ -179,7 +198,7 @@ const showRecordingDemo = async (demo, index) => {
     colors,
     size: 112,
     thickness: 6,
-    duration: demo.style === 'chrome' ? 1200 : undefined,
+    duration: demo.style === 'chrome' ? 1200 : demo.style === 'siri-v2' ? 1600 : undefined,
     interactionMode: 'passThrough',
     accessibilityLabel: demo.message || `${demo.style} loader`,
     ...demo,

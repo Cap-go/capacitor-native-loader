@@ -11,7 +11,7 @@ Native animated loaders for Capacitor apps. Render loaders above the WebView wit
 
 ## Features
 
-- Native loader styles: `siri`, `chrome`, `orbit`, `ring`, `pulse`, `dots`, `bars`, `wave`, `halo`, and `around`.
+- Native loader styles: `siri`, `siri-v2`, `chrome`, `orbit`, `ring`, `pulse`, `dots`, `bars`, `wave`, `halo`, and `around`.
 - Asset loaders: native Lottie JSON and native image views from bundled assets, file URLs, remote URLs, or data URLs.
 - Placements: center, top, bottom, left, right, fullscreen, around the screen, or custom frame.
 - Transparent overlays with pass-through, blocking, or loader-only touch handling.
@@ -23,12 +23,13 @@ Native animated loaders for Capacitor apps. Render loaders above the WebView wit
 
 | Loader | Demo | Loader | Demo |
 | ------ | ---- | ------ | ---- |
-| Siri | ![Siri loader](docs/previews/siri.webp) | Chrome top | ![Chrome top loader](docs/previews/chrome.webp) |
-| Ring | ![Ring loader](docs/previews/ring.webp) | Dots | ![Dots loader](docs/previews/dots.webp) |
-| Bars | ![Bars loader](docs/previews/bars.webp) | Wave | ![Wave loader](docs/previews/wave.webp) |
-| Orbit | ![Orbit loader](docs/previews/orbit.webp) | Pulse | ![Pulse loader](docs/previews/pulse.webp) |
-| Halo | ![Halo loader](docs/previews/halo.webp) | Around | ![Around loader](docs/previews/around.webp) |
-| Lottie | ![Lottie loader](docs/previews/lottie.webp) | Image | ![Image loader](docs/previews/image.webp) |
+| Siri | ![Siri loader](docs/previews/siri.webp) | Siri v2 | ![Siri v2 edge loader](docs/previews/siri-v2.webp) |
+| Chrome top | ![Chrome top loader](docs/previews/chrome.webp) | Ring | ![Ring loader](docs/previews/ring.webp) |
+| Dots | ![Dots loader](docs/previews/dots.webp) | Bars | ![Bars loader](docs/previews/bars.webp) |
+| Wave | ![Wave loader](docs/previews/wave.webp) | Orbit | ![Orbit loader](docs/previews/orbit.webp) |
+| Pulse | ![Pulse loader](docs/previews/pulse.webp) | Halo | ![Halo loader](docs/previews/halo.webp) |
+| Around | ![Around loader](docs/previews/around.webp) | Lottie | ![Lottie loader](docs/previews/lottie.webp) |
+| Image | ![Image loader](docs/previews/image.webp) |  |  |
 
 Regenerate previews with:
 
@@ -502,6 +503,7 @@ Plugin version payload.
 Built-in native loader renderer.
 
 - `siri`: blurred, rotating multi-orb loader inspired by assistant listening UI.
+- `siri-v2`: full-screen Siri-style color motion around the screen edge.
 - `chrome`: full-width top edge progress bar inspired by browser page loading UI.
 - `orbit`: dots orbiting a transparent center.
 - `ring`: rotating stroked ring.
@@ -513,7 +515,7 @@ Built-in native loader renderer.
 - `lottie`: native Lottie JSON animation from `asset`.
 - `image`: native image view from `asset`, rotating when `autoPlay` is enabled.
 
-<code>'siri' | 'chrome' | 'orbit' | 'ring' | 'pulse' | 'dots' | 'bars' | 'wave' | 'halo' | 'lottie' | 'image'</code>
+<code>'siri' | 'siri-v2' | 'chrome' | 'orbit' | 'ring' | 'pulse' | 'dots' | 'bars' | 'wave' | 'halo' | 'lottie' | 'image'</code>
 
 
 #### NativeLoaderPlacement

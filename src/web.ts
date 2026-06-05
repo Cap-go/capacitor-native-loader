@@ -282,12 +282,19 @@ export class NativeLoaderWeb extends WebPlugin implements NativeLoaderPlugin {
       wrapper.style.height = `${options.frame.height}px`;
     }
 
-    if (options.style === 'chrome') {
-      const chrome = this.renderGraphic(options);
-      chrome.setAttribute('role', 'status');
-      chrome.setAttribute('aria-live', 'polite');
-      chrome.setAttribute('aria-label', options.accessibilityLabel ?? options.message ?? 'Loading');
-      wrapper.appendChild(chrome);
+    if (options.style === 'chrome' || options.style === 'siri-v2') {
+      const edgeLoader = this.renderGraphic(options);
+      edgeLoader.setAttribute('role', 'status');
+      edgeLoader.setAttribute('aria-live', 'polite');
+      edgeLoader.setAttribute('aria-label', options.accessibilityLabel ?? options.message ?? 'Loading');
+      wrapper.appendChild(edgeLoader);
+
+      if (options.style === 'siri-v2' && options.message) {
+        const message = document.createElement('div');
+        message.className = 'native-loader-message native-loader-edge-message';
+        message.textContent = options.message;
+        wrapper.appendChild(message);
+      }
       return wrapper;
     }
 
@@ -328,7 +335,14 @@ export class NativeLoaderWeb extends WebPlugin implements NativeLoaderPlugin {
       graphic.classList.add('native-loader--determinate');
     }
 
-    const count = options.style === 'chrome' ? 0 : options.style === 'bars' ? 5 : options.style === 'dots' ? 3 : 4;
+    const count =
+      options.style === 'chrome' || options.style === 'siri-v2'
+        ? 0
+        : options.style === 'bars'
+          ? 5
+          : options.style === 'dots'
+            ? 3
+            : 4;
     for (let index = 0; index < count; index += 1) {
       const child = document.createElement('span');
       child.style.setProperty('--loader-index', String(index));
@@ -380,6 +394,16 @@ const css = `
   align-items: flex-start;
   justify-content: stretch;
   padding: max(env(safe-area-inset-top), 0px) 0 0;
+}
+
+.native-loader-style-wrapper-siri-v2 {
+  align-items: stretch;
+  justify-content: stretch;
+  padding:
+    calc(max(env(safe-area-inset-top), 4px) + (var(--loader-thickness) * 0.5))
+    calc(max(env(safe-area-inset-right), 4px) + (var(--loader-thickness) * 0.5))
+    calc(max(env(safe-area-inset-bottom), 4px) + (var(--loader-thickness) * 0.5))
+    calc(max(env(safe-area-inset-left), 4px) + (var(--loader-thickness) * 0.5));
 }
 
 .native-loader-bottom {
@@ -437,6 +461,18 @@ const css = `
   text-align: center;
 }
 
+.native-loader-edge-message {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: min(280px, calc(100vw - 48px));
+  padding: 10px 16px;
+  border-radius: 999px;
+  color: white;
+  background: rgba(10, 12, 18, 0.58);
+  transform: translate(-50%, -50%);
+}
+
 .native-loader-graphic,
 .native-loader-asset {
   width: var(--loader-size);
@@ -479,6 +515,45 @@ const css = `
   animation: none;
   transform: scaleX(var(--loader-progress-ratio, 0));
   transform-origin: left center;
+}
+
+.native-loader-style-siri-v2 {
+  width: 100%;
+  height: 100%;
+  border-radius: clamp(28px, 7vmin, 54px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
+.native-loader-style-siri-v2::before,
+.native-loader-style-siri-v2::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--loader-thickness);
+  background: conic-gradient(
+    from 0deg,
+    var(--loader-color-1),
+    var(--loader-color-2),
+    var(--loader-color-3),
+    var(--loader-color-4),
+    var(--loader-color-1)
+  );
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  animation: native-loader-siri-v2 calc(1600ms * var(--loader-speed)) linear infinite;
+}
+
+.native-loader-style-siri-v2::before {
+  padding: calc(var(--loader-thickness) * 2.2);
+  filter: blur(calc(var(--loader-thickness) * 1.6));
+  opacity: 0.92;
+}
+
+.native-loader-style-siri-v2::after {
+  transform: rotate(24deg);
 }
 
 .native-loader-style-siri span {
@@ -634,5 +709,9 @@ const css = `
   0% { transform: translateX(-110%) scaleX(0.72); opacity: 0.62; }
   46% { transform: translateX(128%) scaleX(1.18); opacity: 1; }
   100% { transform: translateX(250%) scaleX(0.8); opacity: 0.72; }
+}
+
+@keyframes native-loader-siri-v2 {
+  to { transform: rotate(360deg); }
 }
 `;

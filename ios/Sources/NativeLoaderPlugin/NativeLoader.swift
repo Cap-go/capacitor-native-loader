@@ -401,6 +401,7 @@ struct NativeLoaderItem: Identifiable {
 
 enum LoaderStyle: String {
     case siri
+    case siriV2 = "siri-v2"
     case chrome
     case orbit
     case ring
@@ -485,7 +486,11 @@ struct NativeLoaderRootView: View {
 
     @ViewBuilder
     private func itemView(_ item: NativeLoaderItem, geometry: GeometryProxy) -> some View {
-        if item.placement == .around {
+        if item.style == .siriV2 {
+            SiriV2AroundLoaderView(item: item)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .ignoresSafeArea()
+        } else if item.placement == .around {
             AroundLoaderView(item: item)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .ignoresSafeArea()
@@ -625,6 +630,64 @@ struct AroundLoaderView: View {
     }
 }
 
+struct SiriV2AroundLoaderView: View {
+    let item: NativeLoaderItem
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let time = animationTime(context.date, item: item, reduceMotion: reduceMotion)
+            let rotation = time * 150
+            let radius = max(28, item.thickness * 4)
+            let inset = max(8, item.thickness * 1.1)
+
+            ZStack {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.08), lineWidth: item.thickness)
+
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(
+                        AngularGradient(
+                            colors: item.colors,
+                            center: .center,
+                            startAngle: .degrees(rotation),
+                            endAngle: .degrees(rotation + 360)
+                        ),
+                        style: StrokeStyle(lineWidth: item.thickness * 2.2, lineCap: .round, lineJoin: .round)
+                    )
+                    .blur(radius: item.thickness * 1.2)
+                    .opacity(0.92)
+
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(
+                        AngularGradient(
+                            colors: item.colors,
+                            center: .center,
+                            startAngle: .degrees(rotation + 24),
+                            endAngle: .degrees(rotation + 384)
+                        ),
+                        style: StrokeStyle(lineWidth: item.thickness, lineCap: .round, lineJoin: .round)
+                    )
+
+                RoundedRectangle(cornerRadius: max(0, radius - item.thickness), style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.18), lineWidth: max(1, item.thickness * 0.35))
+                    .padding(item.thickness)
+
+                if !item.message.isEmpty {
+                    Text(item.message)
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(.black.opacity(0.58), in: Capsule())
+                }
+            }
+            .padding(inset)
+        }
+        .accessibilityLabel(item.accessibilityLabel ?? item.message.ifEmpty("Loading"))
+    }
+}
+
 struct LoaderGraphicView: View {
     let item: NativeLoaderItem
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -644,6 +707,8 @@ struct LoaderGraphicView: View {
                 HaloLoader(item: item, reduceMotion: reduceMotion)
             }
         case .siri:
+            SiriLoader(item: item, reduceMotion: reduceMotion)
+        case .siriV2:
             SiriLoader(item: item, reduceMotion: reduceMotion)
         case .chrome:
             ChromeLoader(item: item)
@@ -1088,6 +1153,8 @@ private func defaultDuration(for style: LoaderStyle) -> Double {
     switch style {
     case .siri:
         return 1500
+    case .siriV2:
+        return 1600
     case .chrome:
         return 1200
     case .pulse:

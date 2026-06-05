@@ -12,7 +12,7 @@ const recordingDir = join(repoDir, '.preview-recordings');
 const frameRoot = join(recordingDir, 'frames');
 const iosDir = join(exampleDir, 'ios');
 const previewLottieFixture = join(scriptDir, 'preview-loading-dots.json');
-const styleOrder = ['siri', 'chrome', 'ring', 'dots', 'bars', 'wave', 'orbit', 'pulse', 'halo', 'around', 'lottie', 'image'];
+const styleOrder = ['siri', 'siri-v2', 'chrome', 'ring', 'dots', 'bars', 'wave', 'orbit', 'pulse', 'halo', 'around', 'lottie', 'image'];
 const secondsPerDemo = Number(process.env.PREVIEW_SECONDS_PER_DEMO ?? 7);
 const firstDemoOffset = Number(process.env.PREVIEW_FIRST_DEMO_OFFSET ?? 3.2);
 const framesPerDemo = Number(process.env.PREVIEW_FRAMES_PER_DEMO ?? 10);
@@ -358,7 +358,7 @@ final class NativeLoaderPreviewViewController: UIViewController {
             "message": message(for: style),
             "colors": style == "chrome" ? chromeColors : colors,
             "size": size(for: style),
-            "thickness": style == "chrome" ? 4 : 6,
+            "thickness": style == "chrome" ? 4 : (style == "siri-v2" ? 10 : 6),
             "progress": progress(for: style),
             "interactionMode": "loaderOnly",
             "accessibilityLabel": message(for: style)
@@ -368,6 +368,12 @@ final class NativeLoaderPreviewViewController: UIViewController {
             options["message"] = ""
             options["size"] = 1
             options["duration"] = 1200
+        }
+        if style == "siri-v2" {
+            options["message"] = ""
+            options["size"] = 1
+            options["duration"] = 1600
+            options["scrimColor"] = "rgba(3, 7, 18, 0.10)"
         }
         if style == "around" {
             options["placement"] = "around"
@@ -387,7 +393,7 @@ final class NativeLoaderPreviewViewController: UIViewController {
 
     private func placement(for style: String) -> String {
         switch style {
-        case "siri": return "fullscreen"
+        case "siri", "siri-v2": return "fullscreen"
         case "chrome", "wave": return "top"
         case "dots", "image": return "bottom"
         case "around": return "around"
@@ -398,6 +404,7 @@ final class NativeLoaderPreviewViewController: UIViewController {
     private func message(for style: String) -> String {
         switch style {
         case "siri": return "Siri-style loader"
+        case "siri-v2": return ""
         case "chrome": return ""
         case "ring": return "Standard progress"
         case "dots": return "Loading more"
@@ -424,6 +431,7 @@ final class NativeLoaderPreviewViewController: UIViewController {
     private func size(for style: String) -> Int {
         switch style {
         case "siri": return 132
+        case "siri-v2": return 1
         case "lottie": return 96
         case "image": return 72
         default: return 112
@@ -431,7 +439,11 @@ final class NativeLoaderPreviewViewController: UIViewController {
     }
 
     private func displayStyle(for style: String) -> String {
-        style == "chrome" ? "Chrome top" : style.prefix(1).uppercased() + style.dropFirst()
+        switch style {
+        case "chrome": return "Chrome top"
+        case "siri-v2": return "Siri v2"
+        default: return style.prefix(1).uppercased() + style.dropFirst()
+        }
     }
 
     private func setDemoText(style: String, placement: String, message: String) {
