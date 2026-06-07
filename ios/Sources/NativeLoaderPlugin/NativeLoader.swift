@@ -996,7 +996,8 @@ struct WaveLoader: View {
                 let midY = size.height / 2
                 for xValue in stride(from: 0, through: size.width, by: 2) {
                     let progress = xValue / size.width
-                    let yValue = midY + sin(progress * .pi * 2 + time * 3.2) * size.height * 0.18
+                    let phase = Double(progress) * Double.pi * 2 + time * 3.2
+                    let yValue = midY + CGFloat(sin(phase)) * size.height * 0.18
                     if xValue == 0 {
                         path.move(to: CGPoint(x: xValue, y: yValue))
                     } else {
