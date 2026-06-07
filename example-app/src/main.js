@@ -1,3 +1,4 @@
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import './style.css';
 import { Capacitor } from '@capacitor/core';
 import { NativeLoader } from '@capgo/capacitor-native-loader';
@@ -277,4 +278,10 @@ versionButton.addEventListener('click', async () => {
 
 if (import.meta.env.VITE_NATIVE_LOADER_RECORDING === '1' && Capacitor.isNativePlatform()) {
   void runRecordingCarousel();
+}
+
+if (Capacitor.isNativePlatform()) {
+  CapacitorUpdater.notifyAppReady().catch((error) => {
+    console.error('Capgo notifyAppReady failed', error);
+  });
 }
