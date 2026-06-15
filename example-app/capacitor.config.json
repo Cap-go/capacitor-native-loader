@@ -1,0 +1,18 @@
+{
+  "appId": "app.capgo.nativeloader.example",
+  "appName": "Native Loader Example",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    },
+    "CapacitorUpdater": {
+      "appId": "app.capgo.nativeloader.example",
+      "autoUpdate": true,
+      "autoSplashscreen": true,
+      "directUpdate": "always",
+      "version": "1.0.0"
+    }
+  }
+}
