@@ -1,3 +1,4 @@
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import './style.css';
 import { Capacitor } from '@capacitor/core';
 import { NativeLoader } from '@capgo/capacitor-native-loader';
@@ -87,7 +88,11 @@ const options = () => {
     thickness: isChrome ? 4 : isSiriV2 ? 10 : 6,
     progress: Number(progress.value) / 100,
     interactionMode: interactionMode.value,
-    scrimColor: isSiriV2 ? 'rgba(3, 7, 18, 0.10)' : selectedPlacement === 'fullscreen' ? 'rgba(3, 7, 18, 0.42)' : undefined,
+    scrimColor: isSiriV2
+      ? 'rgba(3, 7, 18, 0.10)'
+      : selectedPlacement === 'fullscreen'
+        ? 'rgba(3, 7, 18, 0.42)'
+        : undefined,
     accessibilityLabel: message.value || 'Loading',
     asset: assetForStyle(selectedStyle),
     webView: resizeWebView.checked
@@ -277,4 +282,10 @@ versionButton.addEventListener('click', async () => {
 
 if (import.meta.env.VITE_NATIVE_LOADER_RECORDING === '1' && Capacitor.isNativePlatform()) {
   void runRecordingCarousel();
+}
+
+if (Capacitor.isNativePlatform()) {
+  CapacitorUpdater.notifyAppReady().catch((error) => {
+    console.error('Capgo notifyAppReady failed', error);
+  });
 }
