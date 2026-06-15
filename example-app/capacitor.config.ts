@@ -7,12 +7,14 @@ const config: CapacitorConfig = {
   appName: 'Native Loader Example',
   webDir: 'dist',
   plugins: {
+    SplashScreen: {
+      launchAutoHide: false,
+    },
     CapacitorUpdater: {
       appId: 'app.capgo.nativeloader.example',
       autoUpdate: true,
       autoSplashscreen: true,
       directUpdate: 'always',
-      defaultChannel: 'production',
       version: pkg.version,
     },
   },
