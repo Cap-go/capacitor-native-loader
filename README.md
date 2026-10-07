@@ -1,10 +1,12 @@
 # @capgo/capacitor-native-loader
 
-<a href="https://capgo.app/"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-native-loader" alt="Capgo - Instant updates for Capacitor" /></a>
+<a href="https://capgo.app/?ref=plugin_native_loader"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-native-loader" alt="Capgo - Instant updates for Capacitor" /></a>
 
 <div align="center">
-  <h2><a href="https://capgo.app/?ref=plugin_native_loader">Get Instant updates for your App with Capgo</a></h2>
-  <h2><a href="https://capgo.app/consulting/?ref=plugin_native_loader">Missing a feature? We'll build the plugin for you</a></h2>
+  <p><b>Capgo</b>: open-source live updates for Ionic and Capacitor apps. Ship OTA fixes and features instantly, without waiting for app store review.</p>
+  <h2><a href="https://capgo.app/register/?ref=plugin_native_loader">➡️ Get started for free</a></h2>
+  <p>14-day unlimited free trial. No credit card required</p>
+  <p><a href="https://capgo.app/consulting/?ref=plugin_native_loader">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
 
 Native animated loaders for Capacitor apps. Render loaders above the WebView with platform-native SwiftUI, Android Canvas, Lottie, or image assets, while optionally resizing/insetting the WebView so native loading states can share space with web content.
