@@ -15,7 +15,8 @@ import Lottie
     private weak var webView: UIView?
     private var originalWebViewFrame: CGRect?
     private var originalScrollInsets: UIEdgeInsets?
-    private var originalScrollIndicatorInsets: UIEdgeInsets?
+    private var originalVerticalScrollIndicatorInsets: UIEdgeInsets?
+    private var originalHorizontalScrollIndicatorInsets: UIEdgeInsets?
     private var shouldRestoreWebViewOnHide = true
 
     @objc public func getPluginVersion() -> String {
@@ -193,11 +194,13 @@ import Lottie
                 if mode == "inset", let scrollView = (target as? WKWebView)?.scrollView {
                     if self.originalScrollInsets == nil {
                         self.originalScrollInsets = scrollView.contentInset
-                        self.originalScrollIndicatorInsets = scrollView.scrollIndicatorInsets
+                        self.originalVerticalScrollIndicatorInsets = scrollView.verticalScrollIndicatorInsets
+                        self.originalHorizontalScrollIndicatorInsets = scrollView.horizontalScrollIndicatorInsets
                     }
                     let inset = insets(from: options["insets"] as? [String: Any])
                     scrollView.contentInset = inset
-                    scrollView.scrollIndicatorInsets = inset
+                    scrollView.verticalScrollIndicatorInsets = inset
+                    scrollView.horizontalScrollIndicatorInsets = inset
                 }
             }
 
@@ -220,8 +223,11 @@ import Lottie
                     if let contentInset = self.originalScrollInsets {
                         scrollView.contentInset = contentInset
                     }
-                    if let indicatorInsets = self.originalScrollIndicatorInsets {
-                        scrollView.scrollIndicatorInsets = indicatorInsets
+                    if let verticalIndicatorInsets = self.originalVerticalScrollIndicatorInsets {
+                        scrollView.verticalScrollIndicatorInsets = verticalIndicatorInsets
+                    }
+                    if let horizontalIndicatorInsets = self.originalHorizontalScrollIndicatorInsets {
+                        scrollView.horizontalScrollIndicatorInsets = horizontalIndicatorInsets
                     }
                 }
             }
@@ -234,7 +240,8 @@ import Lottie
 
             self.originalWebViewFrame = nil
             self.originalScrollInsets = nil
-            self.originalScrollIndicatorInsets = nil
+            self.originalVerticalScrollIndicatorInsets = nil
+            self.originalHorizontalScrollIndicatorInsets = nil
         }
     }
 
