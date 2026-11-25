@@ -1,0 +1,19 @@
+appId: app.capgo.nativeloader.example
+---
+- launchApp
+- assertVisible:
+    id: show-loader
+- tapOn:
+    id: show-loader
+- assertVisible:
+    id: plugin-output
+- assertNotVisible:
+    id: web-engine-overlay
+- copyTextFrom:
+    id: plugin-output
+- assertTrue: ${maestro.copiedText.includes('"id"')}
+- tapOn:
+    id: hide-loader
+- copyTextFrom:
+    id: plugin-output
+- assertTrue: ${maestro.copiedText.includes('"showing": false')}

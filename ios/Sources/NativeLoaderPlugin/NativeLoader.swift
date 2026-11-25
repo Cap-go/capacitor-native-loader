@@ -169,6 +169,15 @@ import Lottie
         }
     }
 
+    public func nativeViewEngineSurfaceView() -> UIView? {
+        return onMainSync {
+            guard let window = self.overlayWindow, !window.isHidden, !window.items.isEmpty else {
+                return nil
+            }
+            return self.hostingController?.view
+        }
+    }
+
     public func setWebViewLayout(options: [String: Any], webView: UIView? = nil) {
         onMain {
             let target = webView ?? self.webView

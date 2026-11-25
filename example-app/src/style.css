@@ -157,6 +157,58 @@ pre#plugin-output {
     0.84rem/1.45 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+.engine-slot-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.engine-slot-label {
+  margin: 0;
+  color: #a8b8cc;
+  font-size: 0.82rem;
+}
+
+.engine-slot {
+  min-height: 120px;
+  border-radius: 8px;
+  border: 1px dashed rgba(113, 246, 255, 0.42);
+  background: rgba(6, 11, 20, 0.82);
+  position: relative;
+}
+
+.engine-slot::after {
+  content: 'Projection slot';
+  position: absolute;
+  inset: auto 10px 10px auto;
+  font-size: 0.72rem;
+  color: #7f94b0;
+}
+
+.web-engine-overlay[hidden] {
+  display: none !important;
+}
+
+.web-engine-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(3, 7, 18, 0.72);
+}
+
+.web-engine-overlay-card {
+  width: min(320px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(229, 237, 247, 0.18);
+  background: rgba(12, 19, 33, 0.96);
+  text-align: center;
+}
+
 @media (max-width: 680px) {
   body {
     place-items: stretch;

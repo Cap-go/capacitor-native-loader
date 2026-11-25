@@ -15,10 +15,12 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "setWebViewLayout", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "resetWebViewLayout", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getState", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setNativeViewEnginePresentation", returnType: CAPPluginReturnPromise)
     ]
 
     private let implementation = NativeLoader.shared
+    private lazy var engineBridge = NativeLoaderEngineBridge(plugin: self)
 
     @objc func configure(_ call: CAPPluginCall) {
         let defaults = call.getObject("defaults") ?? [:]
@@ -27,16 +29,30 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func show(_ call: CAPPluginCall) {
-        let id = implementation.show(options: stringOptions(call.options), webView: bridge?.webView)
+        let options = stringOptions(call.options)
+        let engineConfig = nativeViewEngineConfig(from: options)
+        let id = implementation.show(options: options, webView: bridge?.webView)
+        if engineConfig.enabled {
+            engineBridge.registerEngineLoader(id: id, projectionSelector: engineConfig.projectionSelector)
+            engineBridge.notifyShown(loaderId: id)
+        }
         call.resolve(["id": id])
     }
 
     @objc func update(_ call: CAPPluginCall) {
-        guard call.getString("id") != nil else {
+        guard let id = call.getString("id") else {
             call.reject("Missing required parameter: id")
             return
         }
-        implementation.update(options: stringOptions(call.options))
+        let options = stringOptions(call.options)
+        let engineConfig = nativeViewEngineConfig(from: options)
+        if engineConfig.enabled {
+            engineBridge.registerEngineLoader(id: id, projectionSelector: engineConfig.projectionSelector)
+        }
+        implementation.update(options: options)
+        if engineBridge.isEngineLoader(id: id) {
+            engineBridge.notifyAppearanceChanged(loaderId: id)
+        }
         call.resolve()
     }
 
@@ -45,24 +61,38 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Missing required parameter: progress")
             return
         }
-        implementation.setProgress(id: call.getString("id"), progress: progress)
+        let id = call.getString("id")
+        implementation.setProgress(id: id, progress: progress)
+        let targetId = id ?? implementation.getState().1.last
+        if let targetId, engineBridge.isEngineLoader(id: targetId) {
+            engineBridge.notifyAppearanceChanged(loaderId: targetId)
+        }
         call.resolve()
     }
 
     @objc func hide(_ call: CAPPluginCall) {
+        let id = call.getString("id")
+        let stateIds = implementation.getState().1
+        let targetId = id ?? stateIds.last
+        let wasEngine = targetId.map { engineBridge.isEngineLoader(id: $0) } ?? false
         implementation.hide(
-            id: call.getString("id"),
+            id: id,
             animated: call.getBool("animated") ?? true,
             restoreWebView: call.getBool("restoreWebView") ?? true
         )
+        if let targetId, wasEngine {
+            engineBridge.notifyHidden(loaderId: targetId)
+        }
         call.resolve()
     }
 
     @objc func hideAll(_ call: CAPPluginCall) {
+        let engineIds = stateIds().filter { engineBridge.isEngineLoader(id: $0) }
         implementation.hideAll(
             animated: call.getBool("animated") ?? true,
             restoreWebView: call.getBool("restoreWebView") ?? true
         )
+        engineIds.forEach { engineBridge.notifyHidden(loaderId: $0) }
         call.resolve()
     }
 
@@ -89,6 +119,55 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
             "version": implementation.getPluginVersion()
         ])
     }
+
+    @objc func setNativeViewEnginePresentation(_ call: CAPPluginCall) {
+        guard let presentation = call.getString("presentation"), presentation == "native" || presentation == "web" else {
+            call.reject("Missing or invalid presentation")
+            return
+        }
+        let id = call.getString("id") ?? stateIds().last
+        guard let id, engineBridge.isEngineLoader(id: id) else {
+            call.resolve()
+            return
+        }
+        switch presentation {
+        case "web":
+            engineBridge.notifyTransitionStarted(loaderId: id)
+        case "native":
+            engineBridge.notifyShown(loaderId: id)
+        default:
+            break
+        }
+        call.resolve()
+    }
+
+    func emitEngineEvent(_ eventName: String, data: [String: Any]) {
+        notifyListeners(eventName, data: data, retainUntilConsumed: false)
+    }
+
+    public override func notifyListeners(_ eventName: String, data: [String: Any]?, retainUntilConsumed: Bool) {
+        if engineBridge.hasEngineLoaders() {
+            engineBridge.receive(eventName: eventName, data: data)
+        }
+        super.notifyListeners(eventName, data: data, retainUntilConsumed: retainUntilConsumed)
+    }
+
+    deinit {
+        engineBridge.destroy()
+    }
+
+    private func stateIds() -> [String] {
+        implementation.getState().1
+    }
+}
+
+private let defaultNativeViewEngineSelector = "#native-loader-engine-slot"
+
+private func nativeViewEngineConfig(from options: [String: Any]) -> (enabled: Bool, projectionSelector: String) {
+    let enabled = (options["useNativeViewEngine"] as? Bool) ?? (options["useNativeViewEngine"] as? NSNumber)?.boolValue ?? false
+    let custom = (options["nativeViewEngineProjectionSelector"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let selector = (custom?.isEmpty == false) ? custom! : defaultNativeViewEngineSelector
+    return (enabled, selector)
 }
 
 private func stringOptions(_ options: [AnyHashable: Any]) -> [String: Any] {

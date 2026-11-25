@@ -70,20 +70,44 @@
           Resize WebView
         </label>
 
+        <label class="checkbox">
+          <input id="use-native-view-engine" type="checkbox" data-testid="engine-toggle" />
+          Native view engine
+        </label>
+
         <label>
           Progress
           <input id="loader-progress" type="range" min="0" max="100" value="36" />
         </label>
       </section>
 
-      <section class="actions" aria-label="Actions">
-        <button id="show-loader" type="button">Show</button>
-        <button id="update-loader" type="button">Update</button>
-        <button id="set-progress" type="button">Progress</button>
-        <button id="hide-loader" type="button">Hide</button>
+      <section class="engine-slot-wrap" aria-label="Engine slot">
+        <p class="engine-slot-label">Engine DOM slot</p>
+        <div
+          id="native-loader-engine-slot"
+          class="engine-slot"
+          data-testid="engine-slot"
+          aria-hidden="true"
+        ></div>
       </section>
 
-      <pre id="plugin-output">Idle</pre>
+      <section class="actions" aria-label="Actions">
+        <button id="show-loader" type="button" data-testid="show-loader">Show</button>
+        <button id="update-loader" type="button">Update</button>
+        <button id="set-progress" type="button">Progress</button>
+        <button id="hide-loader" type="button" data-testid="hide-loader">Hide</button>
+        <button id="web-cover" type="button" data-testid="web-cover">Web cover</button>
+        <button id="restore-native" type="button" data-testid="restore-native">Restore native</button>
+      </section>
+
+      <div id="web-engine-overlay" class="web-engine-overlay" data-testid="web-engine-overlay" hidden>
+        <div class="web-engine-overlay-card">
+          <p>Web layer above the native loader</p>
+          <button id="dismiss-web-cover" type="button" data-testid="dismiss-web-cover">Dismiss</button>
+        </div>
+      </div>
+
+      <pre id="plugin-output" data-testid="plugin-output">Idle</pre>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

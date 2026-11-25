@@ -34,6 +34,7 @@
     "webview"
   ],
   "scripts": {
+    "test:unit": "bun test src/native-view-engine-options.test.ts",
     "verify": "bun run verify:ios && bun run verify:android && bun run verify:web",
     "verify:ios": "xcodebuild -scheme CapgoCapacitorNativeLoader -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
@@ -77,6 +78,9 @@
     "swiftlint": "^2.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.4"
+  },
+  "dependencies": {
+    "@webview-native-ui/engine": "1.0.11"
   },
   "peerDependencies": {
     "@capacitor/core": ">=8.0.0"

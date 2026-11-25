@@ -24,6 +24,12 @@ We build, improve and fix our plugins with heavy use of AI, so issues usually ge
 
 [Learn more about how we build with AI](https://capgo.app/docs/plugins/ai-engineering/)
 
+## WebView Native UI Engine (optional)
+
+Enable `useNativeViewEngine` on `show()` to register the active native loader with [`@webview-native-ui/engine`](https://github.com/webview-native-ui/engine/). Your page supplies a DOM slot (default `#native-loader-engine-slot`). Web modals can cover the live loader, then restore native interaction with `setNativeViewEnginePresentation()`. Defaults to `false` so existing apps keep the same overlay behavior.
+
+CocoaPods apps must also add a direct `@webview-native-ui/engine@1.0.11` dependency and the local `WebViewNativeUIEngine` pod path from the [engine Capacitor guide](https://github.com/webview-native-ui/engine/blob/v1.0.11/docs/getting-started/capacitor.md).
+
 ## Features
 
 - Native loader styles: `siri`, `siri-v2`, `chrome`, `orbit`, `ring`, `pulse`, `dots`, `bars`, `wave`, `halo`, and `around`.
@@ -217,6 +223,7 @@ NativeLoader.hide(id)
 * [`resetWebViewLayout(...)`](#resetwebviewlayout)
 * [`getState()`](#getstate)
 * [`getPluginVersion()`](#getpluginversion)
+* [`setNativeViewEnginePresentation(...)`](#setnativeviewenginepresentation)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -375,6 +382,25 @@ Returns the platform implementation version marker.
 --------------------
 
 
+### setNativeViewEnginePresentation(...)
+
+```typescript
+setNativeViewEnginePresentation(options: NativeViewEnginePresentationOptions) => Promise<void>
+```
+
+Switch presentation between native and Web projection for a loader that
+was shown with `useNativeViewEngine`. No-ops when the flag is off or the
+loader is not engine-enabled.
+
+| Param         | Type                                                                                                |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#nativeviewenginepresentationoptions">NativeViewEnginePresentationOptions</a></code> |
+
+**Since:** 8.1.15
+
+--------------------
+
+
 ### Interfaces
 
 
@@ -391,29 +417,31 @@ Global defaults applied to future `show` calls.
 
 Loader display options.
 
-| Prop                     | Type                                                                                    | Description                                                                           |
-| ------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| **`id`**                 | <code>string</code>                                                                     | Stable loader id. A generated id is returned when omitted.                            |
-| **`style`**              | <code><a href="#nativeloaderstyle">NativeLoaderStyle</a></code>                         | Built-in style or asset renderer. Defaults to `siri`.                                 |
-| **`placement`**          | <code><a href="#nativeloaderplacement">NativeLoaderPlacement</a></code>                 | Native window placement. Defaults to `center`.                                        |
-| **`frame`**              | <code><a href="#nativeloaderframe">NativeLoaderFrame</a></code>                         | Custom frame used when `placement` is `custom`.                                       |
-| **`message`**            | <code>string</code>                                                                     | Optional loading message shown below or near the loader.                              |
-| **`size`**               | <code>number</code>                                                                     | Loader size in points / CSS pixels. Defaults to `96`.                                 |
-| **`thickness`**          | <code>number</code>                                                                     | Thickness for ring, edge, and progress loaders. Defaults to `5`.                      |
-| **`duration`**           | <code>number</code>                                                                     | Animation duration in milliseconds for one cycle. Defaults vary by style.             |
-| **`speed`**              | <code>number</code>                                                                     | Animation speed multiplier. Defaults to `1`.                                          |
-| **`progress`**           | <code>number</code>                                                                     | Determinate progress from `0` to `1`. Omit for indeterminate loaders.                 |
-| **`colors`**             | <code>string[]</code>                                                                   | Loader colors. Built-in loaders use the first colors as gradient stops.               |
-| **`backgroundColor`**    | <code>string</code>                                                                     | Container background color.                                                           |
-| **`scrimColor`**         | <code>string</code>                                                                     | Fullscreen scrim color. Used by `fullscreen` and `around` placements when set.        |
-| **`cornerRadius`**       | <code>number</code>                                                                     | Corner radius for the floating container. Defaults to `24`.                           |
-| **`blurRadius`**         | <code>number</code>                                                                     | Native blur radius where supported. Defaults to `0`.                                  |
-| **`autoHide`**           | <code>number</code>                                                                     | Hide automatically after this many milliseconds.                                      |
-| **`interactionMode`**    | <code><a href="#nativeloaderinteractionmode">NativeLoaderInteractionMode</a></code>     | Touch handling for the overlay. Defaults to `passThrough` unless `scrimColor` is set. |
-| **`reducedMotion`**      | <code><a href="#nativeloaderreducedmotionmode">NativeLoaderReducedMotionMode</a></code> | Reduced motion behavior. Defaults to `system`.                                        |
-| **`accessibilityLabel`** | <code>string</code>                                                                     | Accessibility label announced when the loader appears.                                |
-| **`asset`**              | <code><a href="#nativeloaderasset">NativeLoaderAsset</a></code>                         | Asset configuration for `lottie` and `image` loaders.                                 |
-| **`webView`**            | <code><a href="#nativeloaderwebviewlayout">NativeLoaderWebViewLayout</a></code>         | Optional native WebView layout mutation while the loader is visible.                  |
+| Prop                                     | Type                                                                                    | Description                                                                                                                                                                                                               | Default                                   | Since  |
+| ---------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ------ |
+| **`id`**                                 | <code>string</code>                                                                     | Stable loader id. A generated id is returned when omitted.                                                                                                                                                                |                                           |        |
+| **`style`**                              | <code><a href="#nativeloaderstyle">NativeLoaderStyle</a></code>                         | Built-in style or asset renderer. Defaults to `siri`.                                                                                                                                                                     |                                           |        |
+| **`placement`**                          | <code><a href="#nativeloaderplacement">NativeLoaderPlacement</a></code>                 | Native window placement. Defaults to `center`.                                                                                                                                                                            |                                           |        |
+| **`frame`**                              | <code><a href="#nativeloaderframe">NativeLoaderFrame</a></code>                         | Custom frame used when `placement` is `custom`.                                                                                                                                                                           |                                           |        |
+| **`message`**                            | <code>string</code>                                                                     | Optional loading message shown below or near the loader.                                                                                                                                                                  |                                           |        |
+| **`size`**                               | <code>number</code>                                                                     | Loader size in points / CSS pixels. Defaults to `96`.                                                                                                                                                                     |                                           |        |
+| **`thickness`**                          | <code>number</code>                                                                     | Thickness for ring, edge, and progress loaders. Defaults to `5`.                                                                                                                                                          |                                           |        |
+| **`duration`**                           | <code>number</code>                                                                     | Animation duration in milliseconds for one cycle. Defaults vary by style.                                                                                                                                                 |                                           |        |
+| **`speed`**                              | <code>number</code>                                                                     | Animation speed multiplier. Defaults to `1`.                                                                                                                                                                              |                                           |        |
+| **`progress`**                           | <code>number</code>                                                                     | Determinate progress from `0` to `1`. Omit for indeterminate loaders.                                                                                                                                                     |                                           |        |
+| **`colors`**                             | <code>string[]</code>                                                                   | Loader colors. Built-in loaders use the first colors as gradient stops.                                                                                                                                                   |                                           |        |
+| **`backgroundColor`**                    | <code>string</code>                                                                     | Container background color.                                                                                                                                                                                               |                                           |        |
+| **`scrimColor`**                         | <code>string</code>                                                                     | Fullscreen scrim color. Used by `fullscreen` and `around` placements when set.                                                                                                                                            |                                           |        |
+| **`cornerRadius`**                       | <code>number</code>                                                                     | Corner radius for the floating container. Defaults to `24`.                                                                                                                                                               |                                           |        |
+| **`blurRadius`**                         | <code>number</code>                                                                     | Native blur radius where supported. Defaults to `0`.                                                                                                                                                                      |                                           |        |
+| **`autoHide`**                           | <code>number</code>                                                                     | Hide automatically after this many milliseconds.                                                                                                                                                                          |                                           |        |
+| **`interactionMode`**                    | <code><a href="#nativeloaderinteractionmode">NativeLoaderInteractionMode</a></code>     | Touch handling for the overlay. Defaults to `passThrough` unless `scrimColor` is set.                                                                                                                                     |                                           |        |
+| **`reducedMotion`**                      | <code><a href="#nativeloaderreducedmotionmode">NativeLoaderReducedMotionMode</a></code> | Reduced motion behavior. Defaults to `system`.                                                                                                                                                                            |                                           |        |
+| **`accessibilityLabel`**                 | <code>string</code>                                                                     | Accessibility label announced when the loader appears.                                                                                                                                                                    |                                           |        |
+| **`asset`**                              | <code><a href="#nativeloaderasset">NativeLoaderAsset</a></code>                         | Asset configuration for `lottie` and `image` loaders.                                                                                                                                                                     |                                           |        |
+| **`webView`**                            | <code><a href="#nativeloaderwebviewlayout">NativeLoaderWebViewLayout</a></code>         | Optional native WebView layout mutation while the loader is visible.                                                                                                                                                      |                                           |        |
+| **`useNativeViewEngine`**                | <code>boolean</code>                                                                    | When true on native platforms, register the visible loader with `@webview-native-ui/engine` so Web UI can cover the loader or align it with a DOM slot. Defaults to `false` and leaves current loader behavior unchanged. | <code>false</code>                        | 8.1.15 |
+| **`nativeViewEngineProjectionSelector`** | <code>string</code>                                                                     | CSS selector for the Web projection container when `useNativeViewEngine` is true. The container must exist in the page when the loader is shown.                                                                          | <code>'#native-loader-engine-slot'</code> | 8.1.15 |
 
 
 #### NativeLoaderFrame
@@ -522,6 +550,16 @@ Plugin version payload.
 | Prop          | Type                | Description                                                 |
 | ------------- | ------------------- | ----------------------------------------------------------- |
 | **`version`** | <code>string</code> | Version identifier returned by the platform implementation. |
+
+
+#### NativeViewEnginePresentationOptions
+
+Controls WebView Native UI Engine presentation for an active loader.
+
+| Prop               | Type                           | Description                                                                |
+| ------------------ | ------------------------------ | -------------------------------------------------------------------------- |
+| **`presentation`** | <code>'native' \| 'web'</code> | `web` prepares a Web-layer cover; `native` restores live native rendering. |
+| **`id`**           | <code>string</code>            | Loader id. When omitted, the newest engine-enabled loader is used.         |
 
 
 ### Type Aliases

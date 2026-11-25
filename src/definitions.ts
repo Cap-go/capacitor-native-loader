@@ -289,6 +289,26 @@ export interface NativeLoaderShowOptions {
    * Optional native WebView layout mutation while the loader is visible.
    */
   webView?: NativeLoaderWebViewLayout;
+
+  /**
+   * When true on native platforms, register the visible loader with
+   * `@webview-native-ui/engine` so Web UI can cover the loader or align it
+   * with a DOM slot. Defaults to `false` and leaves current loader behavior
+   * unchanged.
+   *
+   * @default false
+   * @since 8.1.15
+   */
+  useNativeViewEngine?: boolean;
+
+  /**
+   * CSS selector for the Web projection container when `useNativeViewEngine`
+   * is true. The container must exist in the page when the loader is shown.
+   *
+   * @default '#native-loader-engine-slot'
+   * @since 8.1.15
+   */
+  nativeViewEngineProjectionSelector?: string;
 }
 
 /**
@@ -434,4 +454,28 @@ export interface NativeLoaderPlugin {
    * Returns the platform implementation version marker.
    */
   getPluginVersion(): Promise<PluginVersionResult>;
+
+  /**
+   * Switch presentation between native and Web projection for a loader that
+   * was shown with `useNativeViewEngine`. No-ops when the flag is off or the
+   * loader is not engine-enabled.
+   *
+   * @since 8.1.15
+   */
+  setNativeViewEnginePresentation(options: NativeViewEnginePresentationOptions): Promise<void>;
+}
+
+/**
+ * Controls WebView Native UI Engine presentation for an active loader.
+ */
+export interface NativeViewEnginePresentationOptions {
+  /**
+   * `web` prepares a Web-layer cover; `native` restores live native rendering.
+   */
+  presentation: 'native' | 'web';
+
+  /**
+   * Loader id. When omitted, the newest engine-enabled loader is used.
+   */
+  id?: string;
 }

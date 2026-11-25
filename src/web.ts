@@ -212,6 +212,10 @@ export class NativeLoaderWeb extends WebPlugin implements NativeLoaderPlugin {
     };
   }
 
+  async setNativeViewEnginePresentation(): Promise<void> {
+    return;
+  }
+
   private normalizeOptions(options: NativeLoaderShowOptions): RequiredOptions {
     return {
       ...options,

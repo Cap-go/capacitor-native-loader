@@ -160,6 +160,13 @@ object NativeLoader {
     }
 
     @JvmStatic
+    fun nativeViewEngineSurfaceView(): View? {
+        val current = overlay ?: return null
+        if (current.items.isEmpty()) return null
+        return current.root
+    }
+
+    @JvmStatic
     @JvmOverloads
     fun setWebViewLayout(options: Map<String, Any?>, webView: View? = null) {
         runOnMain {
