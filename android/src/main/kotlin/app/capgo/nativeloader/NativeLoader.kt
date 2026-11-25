@@ -60,11 +60,44 @@ object NativeLoader {
     @JvmStatic
     fun getPluginVersion(): String = VERSION
 
+    @JvmField
+    var onLoaderHidden: ((String) -> Unit)? = null
+
     @JvmStatic
     fun configure(defaults: Map<String, Any?>) {
         runOnMain {
             this.defaults.putAll(defaults)
         }
+    }
+
+    @JvmStatic
+    fun mergedShowOptions(options: Map<String, Any?>): Map<String, Any?> {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return defaults.toMutableMap().apply { putAll(options) }
+        }
+        var result: Map<String, Any?> = emptyMap()
+        val latch = CountDownLatch(1)
+        mainHandler.post {
+            result = defaults.toMutableMap().apply { putAll(options) }
+            latch.countDown()
+        }
+        latch.await()
+        return result
+    }
+
+    @JvmStatic
+    fun rawOptionsForLoader(id: String): Map<String, Any?>? {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return overlay?.items?.get(id)?.rawOptions
+        }
+        var result: Map<String, Any?>? = null
+        val latch = CountDownLatch(1)
+        mainHandler.post {
+            result = overlay?.items?.get(id)?.rawOptions
+            latch.countDown()
+        }
+        latch.await()
+        return result
     }
 
     @JvmStatic
@@ -132,6 +165,7 @@ object NativeLoader {
             val targetId = id ?: overlay.items.keys.lastOrNull() ?: return@runOnMain
             timers.remove(targetId)?.let { mainHandler.removeCallbacks(it) }
             overlay.hide(targetId, animated) {
+                onLoaderHidden?.invoke(targetId)
                 if (overlay.items.isEmpty() && restoreWebView && restoreWebViewOnHide) {
                     resetWebViewLayout(animated)
                 }
@@ -145,7 +179,9 @@ object NativeLoader {
         runOnMain {
             timers.values.forEach { mainHandler.removeCallbacks(it) }
             timers.clear()
+            val hiddenIds = overlay?.items?.keys?.toList().orEmpty()
             overlay?.hideAll(animated) {
+                hiddenIds.forEach { onLoaderHidden?.invoke(it) }
                 if (restoreWebView && restoreWebViewOnHide) {
                     resetWebViewLayout(animated)
                 }
@@ -157,6 +193,13 @@ object NativeLoader {
     fun getState(): Pair<Boolean, List<String>> {
         val ids = overlay?.items?.keys?.toList().orEmpty()
         return Pair(ids.isNotEmpty(), ids)
+    }
+
+    @JvmStatic
+    fun nativeViewEngineSurfaceView(): View? {
+        val current = overlay ?: return null
+        if (current.root.childCount == 0) return null
+        return current.root
     }
 
     @JvmStatic

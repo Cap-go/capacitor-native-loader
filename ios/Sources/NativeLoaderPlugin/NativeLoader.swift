@@ -23,9 +23,23 @@ import Lottie
         return "native"
     }
 
+    public var onLoaderHidden: ((String) -> Void)?
+
     public func configure(defaults: [String: Any]) {
         onMain {
             self.defaults.merge(defaults) { _, new in new }
+        }
+    }
+
+    public func mergedShowOptions(_ options: [String: Any]) -> [String: Any] {
+        return onMainSync {
+            self.defaults.merging(options) { _, new in new }
+        }
+    }
+
+    public func rawOptionsForLoader(id: String) -> [String: Any]? {
+        return onMainSync {
+            self.overlayWindow?.items.first { $0.id == id }?.rawOptions
         }
     }
 
@@ -110,6 +124,7 @@ import Lottie
                 window.blocksTouches = window.items.contains { $0.interactionMode == .block }
                 window.loaderOnlyTouches = window.items.contains { $0.interactionMode == .loaderOnly }
                 self.refreshOverlayView()
+                self.onLoaderHidden?(targetId)
                 if window.items.isEmpty {
                     window.resignKey()
                     window.isHidden = true
@@ -139,6 +154,7 @@ import Lottie
             self.timers.removeAll()
 
             let remove = {
+                window.items.map(\.id).forEach { self.onLoaderHidden?($0) }
                 window.items.removeAll()
                 window.leavingIds.removeAll()
                 window.blocksTouches = false
@@ -166,6 +182,15 @@ import Lottie
         return onMainSync {
             let ids = self.overlayWindow?.items.map(\.id) ?? []
             return (!ids.isEmpty, ids)
+        }
+    }
+
+    public func nativeViewEngineSurfaceView() -> UIView? {
+        return onMainSync {
+            guard let window = self.overlayWindow, !window.isHidden, !window.items.isEmpty else {
+                return nil
+            }
+            return self.hostingController?.view
         }
     }
 

@@ -1,0 +1,9 @@
+appId: app.capgo.nativeloader.example
+---
+- launchApp
+- tapOn:
+    id: show-loader
+- tapOn:
+    id: web-cover
+- assertVisible:
+    text: ".*Engine cover requires.*"

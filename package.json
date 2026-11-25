@@ -34,10 +34,11 @@
     "webview"
   ],
   "scripts": {
+    "test:unit": "bun test src/native-view-engine-options.test.ts",
     "verify": "bun run verify:ios && bun run verify:android && bun run verify:web",
     "verify:ios": "xcodebuild -scheme CapgoCapacitorNativeLoader -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
-    "verify:web": "bun run build",
+    "verify:web": "bun run test:unit && bun run build",
     "lint": "bun run eslint && bun run prettier -- --check && bun run swiftlint -- lint",
     "fmt": "bun run eslint -- --fix && bun run prettier -- --write && bun run swiftlint -- --fix --format",
     "eslint": "eslint \"**/*.ts\"",
@@ -78,8 +79,11 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.4"
   },
+  "dependencies": {
+    "@webview-native-ui/engine": "1.0.11"
+  },
   "peerDependencies": {
-    "@capacitor/core": ">=8.0.0"
+    "@capacitor/core": ">=8.0.0 <9"
   },
   "prettier": "@ionic/prettier-config",
   "swiftlint": "@ionic/swiftlint-config",

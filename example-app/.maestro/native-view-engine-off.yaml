@@ -1,0 +1,13 @@
+appId: app.capgo.nativeloader.example
+---
+- launchApp
+- tapOn:
+    id: show-loader
+- assertVisible:
+    text: ".*\"id\".*"
+- assertNotVisible:
+    id: web-engine-overlay
+- tapOn:
+    id: hide-loader
+- assertVisible:
+    text: ".*\"showing\": false.*"

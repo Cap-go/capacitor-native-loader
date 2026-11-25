@@ -10,6 +10,11 @@ const placement = document.getElementById('loader-placement');
 const interactionMode = document.getElementById('interaction-mode');
 const message = document.getElementById('loader-message');
 const resizeWebView = document.getElementById('resize-webview');
+const useNativeViewEngine = document.getElementById('use-native-view-engine');
+const webCoverButton = document.getElementById('web-cover');
+const restoreNativeButton = document.getElementById('restore-native');
+const webEngineOverlay = document.getElementById('web-engine-overlay');
+const dismissWebCoverButton = document.getElementById('dismiss-web-cover');
 const progress = document.getElementById('loader-progress');
 const showButton = document.getElementById('show-loader');
 const updateButton = document.getElementById('update-loader');
@@ -18,6 +23,7 @@ const hideButton = document.getElementById('hide-loader');
 const versionButton = document.getElementById('get-version');
 
 let currentId;
+let currentEngineEnabled = false;
 
 const colors = ['#71f6ff', '#8b5cf6', '#ff4ecd', '#fff7ad'];
 const chromeColors = ['#4285f4', '#34a853', '#fbbc05', '#ea4335'];
@@ -78,6 +84,8 @@ const options = () => {
   const isChrome = selectedStyle === 'chrome';
   const isSiriV2 = selectedStyle === 'siri-v2';
 
+  const engineRequested = useNativeViewEngine?.checked === true;
+
   return {
     id: currentId,
     style: selectedStyle,
@@ -95,6 +103,8 @@ const options = () => {
         : undefined,
     accessibilityLabel: message.value || 'Loading',
     asset: assetForStyle(selectedStyle),
+    useNativeViewEngine: engineRequested,
+    nativeViewEngineProjectionSelector: '#native-loader-engine-slot',
     webView: resizeWebView.checked
       ? {
           mode: 'resize',
@@ -228,6 +238,7 @@ showButton.addEventListener('click', async () => {
   try {
     const result = await NativeLoader.show(options());
     currentId = result.id;
+    currentEngineEnabled = useNativeViewEngine?.checked === true;
     setOutput(result);
   } catch (error) {
     setOutput(`Error: ${error?.message ?? error}`);
@@ -262,10 +273,44 @@ progressButton.addEventListener('click', async () => {
   }
 });
 
+const openWebCover = async () => {
+  if (!currentId || !currentEngineEnabled) {
+    setOutput({ error: 'Engine cover requires a loader shown with native view engine enabled' });
+    return;
+  }
+  await NativeLoader.setNativeViewEnginePresentation({ presentation: 'web', id: currentId });
+  webEngineOverlay.hidden = false;
+  setOutput({ enginePresentation: 'web', id: currentId });
+};
+
+const closeWebCover = async () => {
+  webEngineOverlay.hidden = true;
+  if (!currentId) {
+    setOutput({ enginePresentation: 'idle' });
+    return;
+  }
+  await NativeLoader.setNativeViewEnginePresentation({ presentation: 'native', id: currentId });
+  setOutput({ enginePresentation: 'native', id: currentId });
+};
+
+webCoverButton?.addEventListener('click', () => {
+  void openWebCover();
+});
+
+restoreNativeButton?.addEventListener('click', () => {
+  void closeWebCover();
+});
+
+dismissWebCoverButton?.addEventListener('click', () => {
+  void closeWebCover();
+});
+
 hideButton.addEventListener('click', async () => {
   try {
+    webEngineOverlay.hidden = true;
     await NativeLoader.hide({ id: currentId });
     currentId = undefined;
+    currentEngineEnabled = false;
     setOutput(await NativeLoader.getState());
   } catch (error) {
     setOutput(`Error: ${error?.message ?? error}`);
