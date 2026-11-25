@@ -63,23 +63,23 @@ final class NativeLoaderEngineBridge {
     }
 
     func notifyAppearanceChanged(loaderId: String) {
-        guard isEngineLoader(loaderId) else { return }
+        guard isEngineLoader(id: loaderId) else { return }
         plugin?.emitEngineEvent("nativeLoaderAppearanceChanged", data: ["id": loaderId])
     }
 
     func notifyShown(loaderId: String) {
-        guard isEngineLoader(loaderId) else { return }
+        guard isEngineLoader(id: loaderId) else { return }
         plugin?.emitEngineEvent("nativeLoaderShown", data: ["id": loaderId])
     }
 
     func notifyHidden(loaderId: String) {
-        guard isEngineLoader(loaderId) else { return }
+        guard isEngineLoader(id: loaderId) else { return }
         plugin?.emitEngineEvent("nativeLoaderHidden", data: ["id": loaderId])
         unregisterEngineLoader(id: loaderId)
     }
 
     func notifyTransitionStarted(loaderId: String) {
-        guard isEngineLoader(loaderId) else { return }
+        guard isEngineLoader(id: loaderId) else { return }
         plugin?.emitEngineEvent("nativeLoaderTransitionStarted", data: ["id": loaderId])
     }
 

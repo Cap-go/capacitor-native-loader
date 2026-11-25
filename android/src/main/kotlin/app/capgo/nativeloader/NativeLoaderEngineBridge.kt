@@ -80,7 +80,7 @@ internal class NativeLoaderEngineBridge(private val plugin: NativeLoaderPlugin) 
     fun notifyHidden(loaderId: String) {
         if (!isEngineLoader(loaderId)) return
         plugin.emitEngineEvent("nativeLoaderHidden", JSObject().put("id", loaderId))
-        unregisterEngineLoader(id)
+        unregisterEngineLoader(loaderId)
     }
 
     fun notifyTransitionStarted(loaderId: String) {
