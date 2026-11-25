@@ -87,7 +87,17 @@ object NativeLoader {
 
     @JvmStatic
     fun rawOptionsForLoader(id: String): Map<String, Any?>? {
-        return overlay?.items?.get(id)?.rawOptions
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return overlay?.items?.get(id)?.rawOptions
+        }
+        var result: Map<String, Any?>? = null
+        val latch = CountDownLatch(1)
+        mainHandler.post {
+            result = overlay?.items?.get(id)?.rawOptions
+            latch.countDown()
+        }
+        latch.await()
+        return result
     }
 
     @JvmStatic
