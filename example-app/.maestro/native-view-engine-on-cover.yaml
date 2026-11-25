@@ -17,5 +17,7 @@ appId: app.capgo.nativeloader.example
     id: dismiss-web-cover
 - assertVisible:
     text: ".*enginePresentation.*native.*"
+- assertNotVisible:
+    id: web-engine-overlay
 - tapOn:
     id: hide-loader

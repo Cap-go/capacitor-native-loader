@@ -5,6 +5,8 @@ appId: app.capgo.nativeloader.example
     id: show-loader
 - assertVisible:
     text: ".*\"id\".*"
+- assertNotVisible:
+    id: web-engine-overlay
 - tapOn:
     id: hide-loader
 - assertVisible:

@@ -42,6 +42,8 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
         if engineConfig.enabled {
             engineBridge.registerEngineLoader(id: id, projectionSelector: engineConfig.projectionSelector)
             engineBridge.notifyShown(loaderId: id)
+        } else if engineBridge.isEngineLoader(id: id) {
+            engineBridge.unregisterEngineLoader(id: id)
         }
         call.resolve(["id": id])
     }
@@ -52,14 +54,19 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         let options = stringOptions(call.options)
-        let merged = implementation.mergedShowOptions(options)
+        let currentOptions = implementation.rawOptionsForLoader(id: id) ?? [:]
+        let merged = implementation.mergedShowOptions(currentOptions.merging(options) { _, new in new })
         let engineConfig = nativeViewEngineConfig(from: merged)
         let isVisible = implementation.getState().1.contains(id)
 
         if options.keys.contains("useNativeViewEngine") {
+            let wasEngine = engineBridge.isEngineLoader(id: id)
             if engineConfig.enabled, isVisible {
                 engineBridge.registerEngineLoader(id: id, projectionSelector: engineConfig.projectionSelector)
-            } else if engineConfig.enabled == false {
+                if !wasEngine {
+                    engineBridge.notifyShown(loaderId: id)
+                }
+            } else if options["useNativeViewEngine"] as? Bool == false {
                 engineBridge.unregisterEngineLoader(id: id)
             }
         }

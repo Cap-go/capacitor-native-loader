@@ -7,4 +7,5 @@ const NativeLoader = registerPlugin<NativeLoaderPlugin>('NativeLoader', {
 });
 
 export * from './definitions';
+export { resolveNativeViewEngineFromShowOptions } from './native-view-engine-options';
 export { NativeLoader };

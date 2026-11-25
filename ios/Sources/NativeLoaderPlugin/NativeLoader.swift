@@ -37,6 +37,12 @@ import Lottie
         }
     }
 
+    public func rawOptionsForLoader(id: String) -> [String: Any]? {
+        return onMainSync {
+            self.overlayWindow?.items.first { $0.id == id }?.rawOptions
+        }
+    }
+
     @discardableResult
     public func show(options: [String: Any] = [:], webView: UIView? = nil) -> String {
         return onMainSync {
@@ -184,10 +190,7 @@ import Lottie
             guard let window = self.overlayWindow, !window.isHidden, !window.items.isEmpty else {
                 return nil
             }
-            guard let hostingView = self.hostingController?.view, hostingView.subviews.isEmpty == false else {
-                return nil
-            }
-            return hostingView
+            return self.hostingController?.view
         }
     }
 

@@ -38,6 +38,8 @@ class NativeLoaderPlugin : Plugin() {
         if (engineConfig.enabled) {
             engineBridge.registerEngineLoader(id, engineConfig.projectionSelector)
             engineBridge.notifyShown(id)
+        } else if (engineBridge.isEngineLoader(id)) {
+            engineBridge.unregisterEngineLoader(id)
         }
         call.resolve(JSObject().put("id", id))
     }
@@ -50,15 +52,21 @@ class NativeLoaderPlugin : Plugin() {
         }
         val id = call.getString("id")!!
         val options = call.data.toMap()
-        val merged = NativeLoader.mergedShowOptions(options)
+        val currentOptions = NativeLoader.rawOptionsForLoader(id) ?: emptyMap()
+        val merged = NativeLoader.mergedShowOptions(currentOptions + options)
         val engineConfig = nativeViewEngineConfig(merged)
         val isVisible = NativeLoader.getState().second.contains(id)
 
         if (options.containsKey("useNativeViewEngine")) {
+            val wasEngine = engineBridge.isEngineLoader(id)
             when {
-                engineConfig.enabled && isVisible ->
+                engineConfig.enabled && isVisible -> {
                     engineBridge.registerEngineLoader(id, engineConfig.projectionSelector)
-                !engineConfig.enabled ->
+                    if (!wasEngine) {
+                        engineBridge.notifyShown(id)
+                    }
+                }
+                options["useNativeViewEngine"] == false ->
                     engineBridge.unregisterEngineLoader(id)
             }
         }
@@ -160,6 +168,7 @@ class NativeLoaderPlugin : Plugin() {
     }
 
     override fun handleOnDestroy() {
+        NativeLoader.onLoaderHidden = null
         engineBridge.destroy()
         NativeLoader.hideAll(animated = false, restoreWebView = true)
         super.handleOnDestroy()

@@ -72,7 +72,22 @@ object NativeLoader {
 
     @JvmStatic
     fun mergedShowOptions(options: Map<String, Any?>): Map<String, Any?> {
-        return defaults.toMutableMap().apply { putAll(options) }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return defaults.toMutableMap().apply { putAll(options) }
+        }
+        var result: Map<String, Any?> = emptyMap()
+        val latch = CountDownLatch(1)
+        mainHandler.post {
+            result = defaults.toMutableMap().apply { putAll(options) }
+            latch.countDown()
+        }
+        latch.await()
+        return result
+    }
+
+    @JvmStatic
+    fun rawOptionsForLoader(id: String): Map<String, Any?>? {
+        return overlay?.items?.get(id)?.rawOptions
     }
 
     @JvmStatic
@@ -139,8 +154,8 @@ object NativeLoader {
             val overlay = overlay ?: return@runOnMain
             val targetId = id ?: overlay.items.keys.lastOrNull() ?: return@runOnMain
             timers.remove(targetId)?.let { mainHandler.removeCallbacks(it) }
-            onLoaderHidden?.invoke(targetId)
             overlay.hide(targetId, animated) {
+                onLoaderHidden?.invoke(targetId)
                 if (overlay.items.isEmpty() && restoreWebView && restoreWebViewOnHide) {
                     resetWebViewLayout(animated)
                 }
@@ -154,8 +169,9 @@ object NativeLoader {
         runOnMain {
             timers.values.forEach { mainHandler.removeCallbacks(it) }
             timers.clear()
-            overlay?.items?.keys?.toList()?.forEach { onLoaderHidden?.invoke(it) }
+            val hiddenIds = overlay?.items?.keys?.toList().orEmpty()
             overlay?.hideAll(animated) {
+                hiddenIds.forEach { onLoaderHidden?.invoke(it) }
                 if (restoreWebView && restoreWebViewOnHide) {
                     resetWebViewLayout(animated)
                 }
@@ -172,7 +188,7 @@ object NativeLoader {
     @JvmStatic
     fun nativeViewEngineSurfaceView(): View? {
         val current = overlay ?: return null
-        if (current.items.isEmpty() || current.root.childCount == 0) return null
+        if (current.root.childCount == 0) return null
         return current.root
     }
 
