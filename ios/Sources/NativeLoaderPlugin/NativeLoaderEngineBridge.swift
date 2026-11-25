@@ -14,7 +14,9 @@ final class NativeLoaderEngineBridge {
 
     func registerEngineLoader(id: String, projectionSelector: String) {
         engineEnabledLoaderIds.insert(id)
-        guard projection == nil || activeSelector != projectionSelector else { return }
+        if projection != nil, activeSelector == projectionSelector {
+            return
+        }
 
         projection?.destroy()
         projection = nil

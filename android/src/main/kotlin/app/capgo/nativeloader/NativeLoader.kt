@@ -60,11 +60,19 @@ object NativeLoader {
     @JvmStatic
     fun getPluginVersion(): String = VERSION
 
+    @JvmField
+    var onLoaderHidden: ((String) -> Unit)? = null
+
     @JvmStatic
     fun configure(defaults: Map<String, Any?>) {
         runOnMain {
             this.defaults.putAll(defaults)
         }
+    }
+
+    @JvmStatic
+    fun mergedShowOptions(options: Map<String, Any?>): Map<String, Any?> {
+        return defaults.toMutableMap().apply { putAll(options) }
     }
 
     @JvmStatic
@@ -131,6 +139,7 @@ object NativeLoader {
             val overlay = overlay ?: return@runOnMain
             val targetId = id ?: overlay.items.keys.lastOrNull() ?: return@runOnMain
             timers.remove(targetId)?.let { mainHandler.removeCallbacks(it) }
+            onLoaderHidden?.invoke(targetId)
             overlay.hide(targetId, animated) {
                 if (overlay.items.isEmpty() && restoreWebView && restoreWebViewOnHide) {
                     resetWebViewLayout(animated)
@@ -145,6 +154,7 @@ object NativeLoader {
         runOnMain {
             timers.values.forEach { mainHandler.removeCallbacks(it) }
             timers.clear()
+            overlay?.items?.keys?.toList()?.forEach { onLoaderHidden?.invoke(it) }
             overlay?.hideAll(animated) {
                 if (restoreWebView && restoreWebViewOnHide) {
                     resetWebViewLayout(animated)
@@ -162,7 +172,7 @@ object NativeLoader {
     @JvmStatic
     fun nativeViewEngineSurfaceView(): View? {
         val current = overlay ?: return null
-        if (current.items.isEmpty()) return null
+        if (current.items.isEmpty() || current.root.childCount == 0) return null
         return current.root
     }
 

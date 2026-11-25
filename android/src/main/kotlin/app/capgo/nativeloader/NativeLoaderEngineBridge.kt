@@ -11,8 +11,11 @@ internal class NativeLoaderEngineBridge(private val plugin: NativeLoaderPlugin) 
     private val engineEnabledLoaderIds = mutableSetOf<String>()
 
     fun registerEngineLoader(id: String, projectionSelector: String) {
+        if (projection != null && activeSelector == projectionSelector) {
+            engineEnabledLoaderIds.add(id)
+            return
+        }
         engineEnabledLoaderIds.add(id)
-        if (projection != null && activeSelector == projectionSelector) return
 
         projection?.close()
         projection = null

@@ -6,4 +6,4 @@ appId: app.capgo.nativeloader.example
 - tapOn:
     id: web-cover
 - assertVisible:
-    text: Engine cover requires
+    text: ".*Engine cover requires.*"

@@ -22,6 +22,12 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
     private let implementation = NativeLoader.shared
     private lazy var engineBridge = NativeLoaderEngineBridge(plugin: self)
 
+    public override func load() {
+        implementation.onLoaderHidden = { [weak self] id in
+            self?.engineBridge.notifyHidden(loaderId: id)
+        }
+    }
+
     @objc func configure(_ call: CAPPluginCall) {
         let defaults = call.getObject("defaults") ?? [:]
         implementation.configure(defaults: defaults)
@@ -30,7 +36,8 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func show(_ call: CAPPluginCall) {
         let options = stringOptions(call.options)
-        let engineConfig = nativeViewEngineConfig(from: options)
+        let merged = implementation.mergedShowOptions(options)
+        let engineConfig = nativeViewEngineConfig(from: merged)
         let id = implementation.show(options: options, webView: bridge?.webView)
         if engineConfig.enabled {
             engineBridge.registerEngineLoader(id: id, projectionSelector: engineConfig.projectionSelector)
@@ -45,12 +52,20 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         let options = stringOptions(call.options)
-        let engineConfig = nativeViewEngineConfig(from: options)
-        if engineConfig.enabled {
-            engineBridge.registerEngineLoader(id: id, projectionSelector: engineConfig.projectionSelector)
+        let merged = implementation.mergedShowOptions(options)
+        let engineConfig = nativeViewEngineConfig(from: merged)
+        let isVisible = implementation.getState().1.contains(id)
+
+        if options.keys.contains("useNativeViewEngine") {
+            if engineConfig.enabled, isVisible {
+                engineBridge.registerEngineLoader(id: id, projectionSelector: engineConfig.projectionSelector)
+            } else if engineConfig.enabled == false {
+                engineBridge.unregisterEngineLoader(id: id)
+            }
         }
+
         implementation.update(options: options)
-        if engineBridge.isEngineLoader(id: id) {
+        if engineBridge.isEngineLoader(id: id), isVisible {
             engineBridge.notifyAppearanceChanged(loaderId: id)
         }
         call.resolve()
@@ -71,28 +86,19 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func hide(_ call: CAPPluginCall) {
-        let id = call.getString("id")
-        let stateIds = implementation.getState().1
-        let targetId = id ?? stateIds.last
-        let wasEngine = targetId.map { engineBridge.isEngineLoader(id: $0) } ?? false
         implementation.hide(
-            id: id,
+            id: call.getString("id"),
             animated: call.getBool("animated") ?? true,
             restoreWebView: call.getBool("restoreWebView") ?? true
         )
-        if let targetId, wasEngine {
-            engineBridge.notifyHidden(loaderId: targetId)
-        }
         call.resolve()
     }
 
     @objc func hideAll(_ call: CAPPluginCall) {
-        let engineIds = stateIds().filter { engineBridge.isEngineLoader(id: $0) }
         implementation.hideAll(
             animated: call.getBool("animated") ?? true,
             restoreWebView: call.getBool("restoreWebView") ?? true
         )
-        engineIds.forEach { engineBridge.notifyHidden(loaderId: $0) }
         call.resolve()
     }
 
@@ -125,7 +131,8 @@ public class NativeLoaderPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Missing or invalid presentation")
             return
         }
-        let id = call.getString("id") ?? stateIds().last
+        let engineIds = stateIds().filter { engineBridge.isEngineLoader(id: $0) }
+        let id = call.getString("id") ?? engineIds.last
         guard let id, engineBridge.isEngineLoader(id: id) else {
             call.resolve()
             return

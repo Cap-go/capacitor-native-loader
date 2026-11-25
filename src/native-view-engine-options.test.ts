@@ -33,4 +33,12 @@ describe('resolveNativeViewEngineFromShowOptions', () => {
     const result = resolveNativeViewEngineFromShowOptions({}, { useNativeViewEngine: true });
     expect(result.enabled).toBe(true);
   });
+
+  test('defaults inherit projection selector', () => {
+    const result = resolveNativeViewEngineFromShowOptions(
+      { useNativeViewEngine: true },
+      { nativeViewEngineProjectionSelector: '#default-slot' },
+    );
+    expect(result.projectionSelector).toBe('#default-slot');
+  });
 });

@@ -23,6 +23,7 @@ const hideButton = document.getElementById('hide-loader');
 const versionButton = document.getElementById('get-version');
 
 let currentId;
+let currentEngineEnabled = false;
 
 const colors = ['#71f6ff', '#8b5cf6', '#ff4ecd', '#fff7ad'];
 const chromeColors = ['#4285f4', '#34a853', '#fbbc05', '#ea4335'];
@@ -237,6 +238,7 @@ showButton.addEventListener('click', async () => {
   try {
     const result = await NativeLoader.show(options());
     currentId = result.id;
+    currentEngineEnabled = useNativeViewEngine?.checked === true;
     setOutput(result);
   } catch (error) {
     setOutput(`Error: ${error?.message ?? error}`);
@@ -272,7 +274,7 @@ progressButton.addEventListener('click', async () => {
 });
 
 const openWebCover = async () => {
-  if (!currentId || useNativeViewEngine?.checked !== true) {
+  if (!currentId || !currentEngineEnabled) {
     setOutput({ error: 'Engine cover requires a loader shown with native view engine enabled' });
     return;
   }
@@ -282,12 +284,11 @@ const openWebCover = async () => {
 };
 
 const closeWebCover = async () => {
-  if (!currentId || useNativeViewEngine?.checked !== true) {
-    webEngineOverlay.hidden = true;
+  webEngineOverlay.hidden = true;
+  if (!currentId) {
     setOutput({ enginePresentation: 'idle' });
     return;
   }
-  webEngineOverlay.hidden = true;
   await NativeLoader.setNativeViewEnginePresentation({ presentation: 'native', id: currentId });
   setOutput({ enginePresentation: 'native', id: currentId });
 };
@@ -309,6 +310,7 @@ hideButton.addEventListener('click', async () => {
     webEngineOverlay.hidden = true;
     await NativeLoader.hide({ id: currentId });
     currentId = undefined;
+    currentEngineEnabled = false;
     setOutput(await NativeLoader.getState());
   } catch (error) {
     setOutput(`Error: ${error?.message ?? error}`);

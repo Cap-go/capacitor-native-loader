@@ -198,6 +198,10 @@ pre#plugin-output {
   background: rgba(3, 7, 18, 0.72);
 }
 
+.web-engine-overlay button {
+  background: #71f6ff;
+}
+
 .web-engine-overlay-card {
   width: min(320px, 100%);
   display: grid;

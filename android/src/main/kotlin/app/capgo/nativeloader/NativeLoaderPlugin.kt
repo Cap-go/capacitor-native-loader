@@ -15,6 +15,13 @@ private const val DEFAULT_NATIVE_VIEW_ENGINE_SELECTOR = "#native-loader-engine-s
 class NativeLoaderPlugin : Plugin() {
     private val engineBridge = NativeLoaderEngineBridge(this)
 
+    override fun load() {
+        super.load()
+        NativeLoader.onLoaderHidden = { id ->
+            engineBridge.notifyHidden(id)
+        }
+    }
+
     @PluginMethod
     fun configure(call: PluginCall) {
         val defaults = call.getObject("defaults")?.toMap() ?: emptyMap()
@@ -25,7 +32,8 @@ class NativeLoaderPlugin : Plugin() {
     @PluginMethod
     fun show(call: PluginCall) {
         val options = call.data.toMap()
-        val engineConfig = nativeViewEngineConfig(options)
+        val merged = NativeLoader.mergedShowOptions(options)
+        val engineConfig = nativeViewEngineConfig(merged)
         val id = NativeLoader.show(activity, options, bridge.webView)
         if (engineConfig.enabled) {
             engineBridge.registerEngineLoader(id, engineConfig.projectionSelector)
@@ -42,12 +50,21 @@ class NativeLoaderPlugin : Plugin() {
         }
         val id = call.getString("id")!!
         val options = call.data.toMap()
-        val engineConfig = nativeViewEngineConfig(options)
-        if (engineConfig.enabled) {
-            engineBridge.registerEngineLoader(id, engineConfig.projectionSelector)
+        val merged = NativeLoader.mergedShowOptions(options)
+        val engineConfig = nativeViewEngineConfig(merged)
+        val isVisible = NativeLoader.getState().second.contains(id)
+
+        if (options.containsKey("useNativeViewEngine")) {
+            when {
+                engineConfig.enabled && isVisible ->
+                    engineBridge.registerEngineLoader(id, engineConfig.projectionSelector)
+                !engineConfig.enabled ->
+                    engineBridge.unregisterEngineLoader(id)
+            }
         }
+
         NativeLoader.update(options)
-        if (engineBridge.isEngineLoader(id)) {
+        if (engineBridge.isEngineLoader(id) && isVisible) {
             engineBridge.notifyAppearanceChanged(id)
         }
         call.resolve()
@@ -71,28 +88,20 @@ class NativeLoaderPlugin : Plugin() {
 
     @PluginMethod
     fun hide(call: PluginCall) {
-        val id = call.getString("id")
-        val targetId = id ?: NativeLoader.getState().second.lastOrNull()
-        val wasEngine = targetId != null && engineBridge.isEngineLoader(targetId)
         NativeLoader.hide(
-            id = id,
+            id = call.getString("id"),
             animated = call.getBoolean("animated") ?: true,
             restoreWebView = call.getBoolean("restoreWebView") ?: true,
         )
-        if (targetId != null && wasEngine) {
-            engineBridge.notifyHidden(targetId)
-        }
         call.resolve()
     }
 
     @PluginMethod
     fun hideAll(call: PluginCall) {
-        val engineIds = NativeLoader.getState().second.filter { engineBridge.isEngineLoader(it) }
         NativeLoader.hideAll(
             animated = call.getBoolean("animated") ?: true,
             restoreWebView = call.getBoolean("restoreWebView") ?: true,
         )
-        engineIds.forEach { engineBridge.notifyHidden(it) }
         call.resolve()
     }
 
@@ -126,7 +135,8 @@ class NativeLoaderPlugin : Plugin() {
             call.reject("Missing or invalid presentation")
             return
         }
-        val id = call.getString("id") ?: NativeLoader.getState().second.lastOrNull()
+        val engineIds = NativeLoader.getState().second.filter { engineBridge.isEngineLoader(it) }
+        val id = call.getString("id") ?: engineIds.lastOrNull()
         if (id == null || !engineBridge.isEngineLoader(id)) {
             call.resolve()
             return
