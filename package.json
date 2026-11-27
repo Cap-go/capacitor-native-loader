@@ -9,7 +9,6 @@
   "files": [
     "android/src/main/",
     "android/build.gradle",
-    "docs/previews/",
     "dist/",
     "ios/Sources",
     "ios/Tests",
