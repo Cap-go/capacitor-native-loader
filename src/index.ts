@@ -1,10 +1,10 @@
 import { registerPlugin } from '@capacitor/core';
 
-import type { NativeLoaderPlugin } from './definitions';
+import type { NativeLoaderPlugin } from './definitions.js';
 
 const NativeLoader = registerPlugin<NativeLoaderPlugin>('NativeLoader', {
-  web: () => import('./web').then((m) => new m.NativeLoaderWeb()),
+  web: () => import('./web.js').then((m) => new m.NativeLoaderWeb()),
 });
 
-export * from './definitions';
+export * from './definitions.js';
 export { NativeLoader };
