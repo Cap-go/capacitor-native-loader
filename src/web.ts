@@ -11,7 +11,7 @@ import type {
   NativeLoaderUpdateOptions,
   NativeLoaderWebViewLayout,
   PluginVersionResult,
-} from './definitions';
+} from './definitions.js';
 
 interface LoaderRecord {
   element: HTMLElement;
