@@ -38,13 +38,13 @@ We build, improve and fix our plugins with heavy use of AI, so issues usually ge
 
 | Loader | Demo | Loader | Demo |
 | ------ | ---- | ------ | ---- |
-| Siri | ![Siri loader](docs/previews/siri.webp) | Siri v2 | ![Siri v2 edge loader](docs/previews/siri-v2.webp) |
-| Chrome top | ![Chrome top loader](docs/previews/chrome.webp) | Ring | ![Ring loader](docs/previews/ring.webp) |
-| Dots | ![Dots loader](docs/previews/dots.webp) | Bars | ![Bars loader](docs/previews/bars.webp) |
-| Wave | ![Wave loader](docs/previews/wave.webp) | Orbit | ![Orbit loader](docs/previews/orbit.webp) |
-| Pulse | ![Pulse loader](docs/previews/pulse.webp) | Halo | ![Halo loader](docs/previews/halo.webp) |
-| Around | ![Around loader](docs/previews/around.webp) | Lottie | ![Lottie loader](docs/previews/lottie.webp) |
-| Image | ![Image loader](docs/previews/image.webp) |  |  |
+| Siri | ![Siri loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/siri.webp) | Siri v2 | ![Siri v2 edge loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/siri-v2.webp) |
+| Chrome top | ![Chrome top loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/chrome.webp) | Ring | ![Ring loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/ring.webp) |
+| Dots | ![Dots loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/dots.webp) | Bars | ![Bars loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/bars.webp) |
+| Wave | ![Wave loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/wave.webp) | Orbit | ![Orbit loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/orbit.webp) |
+| Pulse | ![Pulse loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/pulse.webp) | Halo | ![Halo loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/halo.webp) |
+| Around | ![Around loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/around.webp) | Lottie | ![Lottie loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/lottie.webp) |
+| Image | ![Image loader](https://raw.githubusercontent.com/Cap-go/capacitor-native-loader/main/docs/previews/image.webp) |  |  |
 
 Regenerate previews with:
 
